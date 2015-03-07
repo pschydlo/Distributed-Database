@@ -1,2 +1,2 @@
-# rci-db
-Projecto de RCI
+# Projecto de RCI
+Código do projecto de RCI
