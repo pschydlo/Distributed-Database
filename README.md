@@ -1,2 +1,2 @@
 # Projecto de RCI
-Código do projecto de RCI
+Repositório de código do projecto de RCI
