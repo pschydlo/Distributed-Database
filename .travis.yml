@@ -5,6 +5,4 @@ compiler:
 
 script: make
 
-env:
-  global:
-    - CI_HOME=`pwd`/src
+before_script: cd src
