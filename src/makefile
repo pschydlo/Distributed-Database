@@ -5,7 +5,7 @@ SOURCES = server.c TCPmanager.c UImanager.c main.c
 OBJECTS = server.o TCPmanager.o UImanager.o main.o
 
 ddt: $(OBJECTS)
-	gcc -g -o ddt $(OBJECTS)
+	gcc -o ddt $(OBJECTS)
 
 server.o: server.h
 
