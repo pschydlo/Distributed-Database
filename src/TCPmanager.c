@@ -25,14 +25,13 @@ int TCPmanagerRes(TCPmanager * tcpmanager, char * buffer, int nbytes){
 	int nwritten;
 	int fd;
 	
-	switch(tcpmanager->)
-	
 	while(nbytes>0){
 		nwritten=write(fd,ptr,nbytes);
 		if(nwritten<=0)exit(1);
 		nbytes-=nwritten;
 		ptr+=nwritten;
 	}
+}
 	
 
 TCPmanager * TCPmanagerInit(){
