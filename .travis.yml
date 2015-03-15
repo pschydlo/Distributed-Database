@@ -1,1 +1,10 @@
 language: C
+
+compiler:
+  - gcc
+
+script: make
+
+env:
+  global:
+    - CI_HOME=`pwd`/src
