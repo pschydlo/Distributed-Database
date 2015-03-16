@@ -1,15 +1,15 @@
 CC = gcc
 
-SOURCES = server.c TCPmanager.c UImanager.c main.c
+SOURCES = server.c RingManager.c UImanager.c main.c
 
-OBJECTS = server.o TCPmanager.o UImanager.o main.o
+OBJECTS = server.o RingManager.o UImanager.o main.o
 
 ddt: $(OBJECTS)
 	gcc -o ddt $(OBJECTS)
 
 server.o: server.h
 
-TCPmanager.o: TCPmanager.h
+RingManager.o: RingManager.h
 
 UImanager.o: UImanager.h
 
