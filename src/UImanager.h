@@ -4,4 +4,4 @@
 
 int UImanagerArm(fd_set * rfds, int * maxfd);
 
-void UImanagerReq(fd_set * rfds, char * buffer);
+int UImanagerReq(fd_set * rfds, char * buffer);

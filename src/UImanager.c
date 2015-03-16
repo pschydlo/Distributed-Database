@@ -7,15 +7,16 @@ int UImanagerArm(fd_set *rfds, int * maxfd){
 	return 1;
 }
 
-void UImanagerReq(fd_set *rfds, char * buffer){
-	
+int UImanagerReq(fd_set *rfds, char * buffer){
 	int n;
 	
 	if(FD_ISSET(0,rfds)){
 		if((n=read(0,buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';
-			printf("You wrote: %s",buffer);
+			return 1;
 		}
 	}
+	
+	return 0;
 }

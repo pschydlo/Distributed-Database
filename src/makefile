@@ -1,8 +1,8 @@
 CC = gcc
 
-SOURCES = server.c RingManager.c UImanager.c main.c
+SOURCES = TCPSocket.c RingManager.c UImanager.c server.c main.c 
 
-OBJECTS = server.o RingManager.o UImanager.o main.o
+OBJECTS = TCPSocket.o RingManager.o UImanager.o server.o main.o
 
 ddt: $(OBJECTS)
 	gcc -o ddt $(OBJECTS)
@@ -13,9 +13,11 @@ RingManager.o: RingManager.h
 
 UImanager.o: UImanager.h
 
+TCPSocket.o: TCPSocket.h
+
 clean:
 	rm -f *o core ddt *~
 
-depend::
+depend:
 	makedepend $(SOURCES)
 # LOL
