@@ -75,8 +75,8 @@ int ServerProcUIReq(Server * server, char * buffer, int n){
 	
 	printf("You wrote: %s", buffer);
 	
-	if(strcmp(buffer, "CON")){
-		RingManagerConnect(server->ringmanager, "192.168.1.1", 58001);   
+	if(strcmp(buffer, "CON\n") == 0){
+		RingManagerConnect(server->ringmanager, "127.0.0.1", 58006);   
 	}
 	
 	return 1;

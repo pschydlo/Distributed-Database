@@ -29,10 +29,16 @@ int RingManagerNew(RingManager * ringmanager, int fd, int port){
 int RingManagerConnect(RingManager * ringmanager, char * ip, int port){
 	
 	int n, fd = TCPSocketCreate();
+
+	if((n = TCPSocketConnect(fd, ip, port)) < 0) {
+		printf("Could not connect to predi.");
+		exit(1);
+	} /*ERRORORORORORO! checking to be done*/
 	
-	if((n = TCPSocketConnect(fd, ip, port)) < 0) exit(1); /*ERRORORORORORO!*/
 	write(fd, "NEW 12121 12", 10);
-	
+	write(fd, "NEW 12121 12", 10);
+
+	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
 	
 	return n;
