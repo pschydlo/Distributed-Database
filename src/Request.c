@@ -15,11 +15,11 @@ void RequestReset(Request * request){
 }
 
 int RequestPushArg(Request * request, char * memstart, int length){
-	if(request->argc==10)return 0;
+	if(request->argc>=10)return 0;
 	
 	memcpy(request->argv[request->argc], memstart, length);	
-	
 	request->argc++;
+	
 	return 1;
 }
 

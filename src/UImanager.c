@@ -1,11 +1,11 @@
 #include "UImanager.h"
 
-int UImanagerParse(char * buffer, Request * request){
+int UImanagerParse(Request * request, char * buffer){
 	
 	int n    = 0;
 	int start = 0;
 	
-	while(buffer[n]!='\n'){
+	while(buffer[n]!='\n' && buffer[n]!='\0'){
 		if(buffer[n] == ' '){
 			RequestPushArg(request, buffer + start, n - start);
 			start = n + 1;
@@ -37,7 +37,7 @@ int UImanagerReq(fd_set *rfds, Request * request){ /*Maybe fix to read pipelined
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			
 			buffer[n]='\0';
-			RequestWrite(request, buffer);
+			UImanagerParse(request, buffer);
 			
 			return 1;
 		}

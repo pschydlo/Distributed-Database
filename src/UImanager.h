@@ -4,7 +4,7 @@
 #include <string.h>
 #include "Request.h"
 
-int UImanagerParse(char * buffer, Request * request);
+int UImanagerParse(Request * request, char * buffer);
 
 int UImanagerArm(fd_set * rfds, int * maxfd);
 
