@@ -97,6 +97,8 @@ int RingManagerReq(RingManager * ringmanager,fd_set * rfds, char * buffer){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';
 			printf("Predi wrote: %s",buffer);
+			fflush(stdout);
+			write(ringmanager->predi->fd, buffer, 6);
 			return 1;
 		}
 	}
@@ -106,26 +108,10 @@ int RingManagerReq(RingManager * ringmanager,fd_set * rfds, char * buffer){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';
 			printf("Succi wrote: %s",buffer);
+			fflush(stdout);
 			return 1;
 		}
 	}
-	
-	/*if(FD_ISSET(afd,&rfds)){
-		if((n=read(newfd,buffer,128))!=0){
-			if(n==-1)exit(1);
-			write(newfd,buffer,n);
-		}else{
-			close(afd);
-			state=idle;
-		}
-	}*/
-	
-	/*if(FD_ISSET(afd,&rfds)){
-		if((n=read(afd,buffer,128))!=0){
-			if(n==-1)exit(1);
-			write(afd,buffer,n);
-		}
-	}*/
 	
 	return 0;
 }

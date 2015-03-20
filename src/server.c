@@ -9,11 +9,11 @@ struct Server{
 	int port;
 };
 
-Server * ServerInit(){
+Server * ServerInit(int port){
 	Server * server=(Server*)malloc(sizeof(Server));
 	
 	server->ringmanager = RingManagerInit();
-	server->tcpmanager  = TCPManagerCreate(9001);
+	server->tcpmanager  = TCPManagerCreate(port);
 	
 	return server;
 }
@@ -34,6 +34,8 @@ int ServerStart(Server * server){
 	int n = 0;
 	Request *request = RequestCreate();
 	
+	RequestReset(request);
+	
 	int fd = TCPSocketCreate();
 	TCPSocketBind(fd, server->port);
 	if(TCPSocketListen(fd)==-1)exit(1);
@@ -49,10 +51,10 @@ int ServerStart(Server * server){
 		RingManagerArm(server->ringmanager,&rfds,&maxfd);
 		TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
 		
-		counter=select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
-		if(counter<0)exit(1);
+		counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
+		if(counter<0) exit(1);
 		
-		if(counter==0)continue;
+		if(counter == 0) continue;
 
 		n = RingManagerReq(server->ringmanager, &rfds, buffer);
 		ServerProcRingReq(server, buffer, n);
@@ -61,7 +63,7 @@ int ServerStart(Server * server){
 		ServerProcTCPReq(server, request);
 		
 		n = UImanagerReq(&rfds, request);
-		ServerProcUIReq(server, request);
+		if(n) ServerProcUIReq(server, request);
 		
 		if(FD_ISSET(fd, &rfds)){
 			int newfd = TCPSocketAccept(fd);
@@ -87,9 +89,26 @@ int ServerProcTCPReq(Server * server, Request * request){
 }
 
 int ServerProcUIReq(Server * server, Request * request){
+	int i = 0;
 	
-	/*if(n <= 0) return n;*/
-	printf("You wrote: %s", RequestGetBuffer(request));
+	if(RequestGetArgCount(request) <= 0) return 0;
+	
+	printf("You wrote: ");
+	
+	for(i = 0; i<RequestGetArgCount(request); i++){
+		printf("%s,", RequestGetArg(request, i));
+		fflush(stdout);
+	}
+	
+	printf("\n");
+	
+	if(strcmp(RequestGetArg(request,0),"join") == 0){
+		if(RequestGetArgCount(request) != 6) return 0;
+		
+		RingManagerConnect(server->ringmanager, 
+						  RequestGetArg(request, 4),
+						  atoi(RequestGetArg(request, 5)));
+	}
 	
 	return 1;
 }

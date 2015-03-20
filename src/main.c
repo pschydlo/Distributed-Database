@@ -5,7 +5,7 @@ int main(int argc, char **argv){
 	
 	Server * server;
 	
-	server = ServerInit();
+	server = ServerInit(atoi(argv[2]));
 	
 	ServerConfigPort(server, 58002);
 	if (argc > 1) ServerConfigPort(server, atoi(argv[1]));

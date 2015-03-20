@@ -6,6 +6,14 @@ struct Request{
 	int argc;
 };
 
+char * RequestGetArg(Request * request, int n){
+	return request->argv[n];
+}
+
+int RequestGetArgCount(Request * request){
+	return request->argc;
+}
+
 Request * RequestCreate(){
 	return (Request*)malloc(sizeof(Request));
 }
@@ -15,9 +23,10 @@ void RequestReset(Request * request){
 }
 
 int RequestPushArg(Request * request, char * memstart, int length){
-	if(request->argc>=10)return 0;
+	if(request->argc>=10 || length == 0)return 0;
 	
-	memcpy(request->argv[request->argc], memstart, length);	
+	memcpy(request->argv[request->argc], memstart, length);
+	request->argv[request->argc][length] = '\0';
 	request->argc++;
 	
 	return 1;
