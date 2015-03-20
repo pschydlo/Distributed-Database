@@ -1,9 +1,5 @@
 #include "RingManager.h"
 
-struct Request{
-	int fd;
-	char * buffer;
-};
 
 struct Peer{
 	int id, fd;

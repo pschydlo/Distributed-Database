@@ -1,2 +1,1 @@
 typedef struct Buffer Buffer;
-
