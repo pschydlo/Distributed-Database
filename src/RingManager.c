@@ -37,10 +37,12 @@ void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
 
 int RingManagerStatus(RingManager * ringmanager){
 	
-	printf("Anel %i | Id %i | Predecessor %i | Successor %i\n",
-			ringmanager->ring, ringmanager->id, 
-			ringmanager->predi->id, 
-			ringmanager->succi->id);
+	printf("Anel %i | Id %i ", ringmanager->ring, ringmanager->id);
+	if(ringmanager->predi != NULL) printf("| Predecessor %i ", ringmanager->predi->id);
+	else printf("Nao existe predecessor ");
+	if(ringmanager->succi != NULL) printf("| Successor %i", ringmanager->succi->id);
+	else printf("Nao existe successor ");
+	printf("\n");
 	
 	return 0;
 }
@@ -67,7 +69,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 	ringmanager->id   = id;
 	ringmanager->ring = ring;
 	
-	write(fd, "NEW 12121 12", 10);
+	/*write(fd, "NEW 12121 12\n", 13);		This code was here just to test*/
 
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
@@ -77,7 +79,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 
 int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
 	
-	int n=0;
+	int n = 0;
 	
 	if(ringmanager->predi != NULL){
 		FD_SET(ringmanager->predi->fd, rfds);
@@ -135,7 +137,7 @@ int RingManagerReq(RingManager * ringmanager,fd_set * rfds, char * buffer){
 			buffer[n]='\0';
 			printf("Predi wrote: %s",buffer);
 			fflush(stdout);
-			write(ringmanager->predi->fd, buffer, 6);
+			/*write(ringmanager->predi->fd, buffer, 6);*/
 			return 1;
 		}
 	}

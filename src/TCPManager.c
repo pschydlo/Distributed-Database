@@ -45,10 +45,10 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 	
 	if(FD_ISSET(tcpmanager->pfd,rfds)){
 		int newfd = TCPSocketAccept(tcpmanager->pfd);
-		tcpmanager->sockets[0] = newfd;
+		tcpmanager->sockets[0] = newfd;	/*Buffer for incoming connections needs to go here*/
 	}
 	
-	if(tcpmanager->sockets[0]!=0 && FD_ISSET(tcpmanager->sockets[0],rfds)){ /*DONT FORGER ZERO = MINUS ONE #### 0 = -1*/
+	if(tcpmanager->sockets[0]!=0 && FD_ISSET(tcpmanager->sockets[0],rfds)){ /*DONT FORGET ZERO = MINUS ONE #### 0 = -1*/
 		if((n=read(tcpmanager->sockets[0],buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';

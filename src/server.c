@@ -3,7 +3,7 @@
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
 struct Server{
-	int i;
+	int isBoot;
 	UDPManager  * udpmanager;
 	TCPManager  * tcpmanager;
 	RingManager * ringmanager;
@@ -37,9 +37,9 @@ int ServerProcArg(Server * server, int argc, char ** argv){
 				if (optopt == 'p')
 					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
 				else if(isprint(optopt))
-					printf("Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]", optopt);
+					fprintf(stderr, "Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]\n", optopt);
 				else
-					printf("Caracter de opcao desconhecido '\\x%x'.\n", optopt);
+					fprintf(stderr, "Caracter de opcao desconhecido '\\x%x'.\n", optopt);
 				return 0;
 			default:
 				return 0;
@@ -47,23 +47,24 @@ int ServerProcArg(Server * server, int argc, char ** argv){
 	printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
 
 	for (i = optind; i < argc; i++)
-		printf ("Argumento invalido %s\n", argv[i]);
+		fprintf (stderr, "Argumento invalido %s\n", argv[i]);
 	
 	if(ringPort != NULL)	server->TCPport = atoi(ringPort);
 	if(bootIP != NULL)		UDPManagerSetIP(server->udpmanager, bootIP);
 	if(bootPort != NULL)	UDPManagerSetPort(server->udpmanager, atoi(bootPort));
-	
+
 	return 0;	
 }
 
 Server * ServerInit(int argc, char ** argv){
 	Server * server=(Server*)malloc(sizeof(Server));
 	
-	server->udpmanager  = UDPManagerInit();
-	server->ringmanager = RingManagerInit();
-	server->tcpmanager  = TCPManagerInit();
-	ServerProcArg(server, argc, argv);
+	server->isBoot		= 0;
 	server->shutdown	= 0;
+	server->udpmanager	= UDPManagerInit();
+	server->tcpmanager	= TCPManagerInit();
+	server->ringmanager	= RingManagerInit();
+	ServerProcArg(server, argc, argv);
 	
 	return server;
 }
@@ -80,13 +81,15 @@ int ServerStart(Server * server){
 	
 	RequestReset(request);
 	
-	TCPManagerCreate(server->tcpmanager, server->TCPport);
+	/*TCPManagerCreate(server->tcpmanager, server->TCPport);*/
+	UDPManagerCreate(server->udpmanager);
 	
 	int fd = TCPSocketCreate();
 	TCPSocketBind(fd, server->TCPport);
+	
 	if(TCPSocketListen(fd)==-1)exit(1);
 	
-	while(!server->shutdown){
+	while(!(server->shutdown)){
 		
 		FD_ZERO(&rfds); maxfd=0;
 		
@@ -121,9 +124,10 @@ int ServerStart(Server * server){
 
 int ServerStop(Server * server){
 									/*To do: close all active fd's*/
-	free(server->udpmanager);
+	free(server->udpmanager);	/*Haven't freed addr yet*/
 	free(server->tcpmanager);
 	free(server->ringmanager);
+	/*free(request);*/
 	return 0;
 }
 
@@ -147,7 +151,7 @@ int ServerProcUIReq(Server * server, Request * request){
 	printf("You wrote: ");
 	
 	for(i = 0; i<RequestGetArgCount(request); i++){
-		printf("%s,", RequestGetArg(request, i));
+		printf("%s ", RequestGetArg(request, i));
 		fflush(stdout);
 	}
 	printf("\n");
@@ -158,12 +162,16 @@ int ServerProcUIReq(Server * server, Request * request){
 														 * CON, QRY, etc, perhaps also in a module, as you love to do.*/
 	
 	command = RequestGetArg(request,0);
+	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
-		if(RequestGetArgCount(request) == 3){
+		if(count != 6 && count != 3) return 0;
+		if(count == 3){
 			/*Send UDP BQRY x*/
-		}
-		else if(RequestGetArgCount(request) != 6) return 0;
-		
+			/*if(BQRY == EMPTY)*/
+			UDPManagerJoin(server->udpmanager, 9);
+			/*else send(ID)*/
+			/*receive "SUCC" from succi*/
+		}		
 		RingManagerConnect(server->ringmanager, 			/* It seems really annoying to have to get many things only Request knows to feed it into RingManager
 															 *	Perhaps we should make RM know what Request is, to feed it directly in?
 															 */
@@ -187,15 +195,18 @@ int ServerProcUIReq(Server * server, Request * request){
 		/*Reset all succi, predi, etc*/
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
-	else if(strcmp(command,"search") == 0){
-		if(RequestGetArgCount(request) < 2) return 0;
-		int k = atoi(RequestGetArg(request, 1));
+	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
+		if(count < 2) return 0;
+		int search = atoi(RequestGetArg(request, 1));
 		int id = RingManagerId(server->ringmanager);
 		
-		if(RingManagerCheck(server->ringmanager, k)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
-		else RingManagerMsg(server->ringmanager, 0, "QRY id k"); /*Add int->string support eventually*/
+		if(RingManagerCheck(server->ringmanager, search)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
+		else RingManagerMsg(server->ringmanager, 0, "QRY id search"); /*Add int->string support eventually*/
 	}
+	else if(strcmp(RequestGetArg(request,0),"boop1") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
+	else if(strcmp(RequestGetArg(request,0),"boop2") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
 	else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
+	else printf("Comando não reconhecido\n");
 	
 	return 1;
 }

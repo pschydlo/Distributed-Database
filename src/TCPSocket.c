@@ -24,8 +24,8 @@ int TCPSocketBind(int fd, int port){
 	addr.sin_family      = AF_INET;
 	addr.sin_addr.s_addr = htons(INADDR_ANY);
 	addr.sin_port        = htons(port);
-
-	if((n=bind(fd,(struct sockaddr*)&addr,sizeof(addr)))==-1)exit(1);
+	
+	if( (n = bind(fd,(struct sockaddr*)&addr,sizeof(addr))) == -1 )exit(1);
 	
 	return n;
 }

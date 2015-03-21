@@ -13,4 +13,6 @@ int UDPManagerSetPort(UDPManager * udpmanager, int bootPort);
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring);
 
+int UDPManagerCreate(UDPManager * udpmanager);
+
 UDPManager * UDPManagerInit();
