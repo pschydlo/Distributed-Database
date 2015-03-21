@@ -9,7 +9,41 @@ struct Peer{
 struct RingManager{
 	Peer * succi;
 	Peer * predi;
+	int ring;
+	int id;
 };
+
+int RingManagerId(RingManager * ringmanager){	/*Necessary function - will probably remain*/
+	return ringmanager->id;
+}
+
+int d(int k, int l){			/*Possibility to place this module somewhere else, for other comparisons as may be needed*/
+	return (l-k);
+	if((l-k) < 0) return (64+l-k);
+}
+
+int RingManagerCheck(RingManager * ringmanager, int k){	/*Quick un-modularized function, can be substituted by more general function*/
+	int id = ringmanager->id;
+	int predid = ringmanager->predi->id;
+	
+	if(d(k, id) < d(k, predid)) return 1;
+	return 0;
+	}
+
+void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
+	if(dest == 0 && ringmanager->succi != NULL) write(ringmanager->succi->fd, msg, strlen(msg));
+	if(dest == 1 && ringmanager->predi != NULL) write(ringmanager->predi->fd, msg, strlen(msg));
+}
+
+int RingManagerStatus(RingManager * ringmanager){
+	
+	printf("Anel %i | Id %i | Predecessor %i | Successor %i\n",
+			ringmanager->ring, ringmanager->id, 
+			ringmanager->predi->id, 
+			ringmanager->succi->id);
+	
+	return 0;
+}
 
 int RingManagerNew(RingManager * ringmanager, int fd, int port){
 	if(ringmanager->predi == NULL){
@@ -22,7 +56,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int port){
 	}
 }
 
-int RingManagerConnect(RingManager * ringmanager, char * ip, int port){
+int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, int port){
 	
 	int n, fd = TCPSocketCreate();
 
@@ -30,8 +64,9 @@ int RingManagerConnect(RingManager * ringmanager, char * ip, int port){
 		printf("Could not connect to predi.");
 		exit(1);
 	} /*ERRORORORORORO! checking to be done*/
+	ringmanager->id   = id;
+	ringmanager->ring = ring;
 	
-	write(fd, "NEW 12121 12", 10);
 	write(fd, "NEW 12121 12", 10);
 
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
@@ -84,6 +119,8 @@ RingManager * RingManagerInit(){
 	ringmanager = (RingManager*)malloc(sizeof(RingManager));
 	ringmanager->succi = NULL;
 	ringmanager->predi = NULL;
+	ringmanager->id    = 0;		/*INITIALIZATION VALUES PLZ CHANGE*/
+	ringmanager->ring  = 0;		/*TEST ONLY*/
 	
 	return ringmanager;
 }

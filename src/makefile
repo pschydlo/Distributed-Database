@@ -1,8 +1,8 @@
 CC = gcc
 
-SOURCES = Request.c TCPSocket.c TCPManager.c RingManager.c UImanager.c server.c main.c 
+SOURCES = Request.c TCPSocket.c TCPManager.c UDPManager.c RingManager.c UIManager.c server.c main.c 
 
-OBJECTS = Request.o TCPSocket.o TCPManager.o RingManager.o UImanager.o server.o main.o
+OBJECTS = Request.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o
 
 ddt: $(OBJECTS)
 	gcc -o ddt $(OBJECTS)
@@ -11,7 +11,9 @@ server.o: server.h
 
 RingManager.o: RingManager.h
 
-UImanager.o: UImanager.h
+UIManager.o: UIManager.h
+
+UDPManager.o: UDPManager.h
 
 TCPManager.o: TCPManager.h
 

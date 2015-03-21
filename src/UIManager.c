@@ -1,6 +1,6 @@
-#include "UImanager.h"
+#include "UIManager.h"
 
-int UImanagerParse(Request * request, char * buffer){
+int UIManagerParse(Request * request, char * buffer){
 	int n, start = 0;
 	RequestReset(request);
 	
@@ -14,14 +14,14 @@ int UImanagerParse(Request * request, char * buffer){
 	return 0;
 }
 
-int UImanagerArm(fd_set *rfds, int * maxfd){
+int UIManagerArm(fd_set *rfds, int * maxfd){
 	
 	FD_SET(0, rfds);
 
 	return 1;
 }
 
-int UImanagerReq(fd_set *rfds, Request * request){ /*Maybe fix to read pipelined commands*/
+int UIManagerReq(fd_set *rfds, Request * request){ /*Maybe fix to read pipelined commands*/
 	
 	int n;
 	char buffer[128];
@@ -31,7 +31,7 @@ int UImanagerReq(fd_set *rfds, Request * request){ /*Maybe fix to read pipelined
 	if(n == -1) exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 		
 	buffer[n]='\0';
-	UImanagerParse(request, buffer);
+	UIManagerParse(request, buffer);
 		
 	return 1;
 }

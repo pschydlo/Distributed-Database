@@ -1,14 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "RingManager.h"
-#include "UImanager.h"
+#include "UDPManager.h"
 #include "TCPManager.h"
+#include "UIManager.h"
 #include "Request.h"
 
 typedef struct Server Server;
 
-Server * ServerInit();
-int ServerStart(Server *);
+Server * ServerInit(int argc, char ** argv);
+int ServerProcArg(Server * server, int argc, char ** argv);
+int ServerStart(Server * server);
 int ServerStop(Server * server);
 
 int ServerProcRingReq(Server * server, char * buffer, int n);

@@ -6,7 +6,8 @@
 
 typedef struct TCPManager TCPManager;
 
-TCPManager * TCPManagerCreate(int port);
+TCPManager * TCPManagerInit();
+int TCPManagerCreate(TCPManager * tcpmanager, int TCPport);
 
 int TCPManagerArm(TCPManager * tcpmanager, fd_set * rfds, int * maxfd);
 int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request);

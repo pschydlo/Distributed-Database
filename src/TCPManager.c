@@ -6,18 +6,22 @@ struct TCPManager{
 	/*Buffer *buffer;*/
 };
 
-TCPManager * TCPManagerCreate(int port){
-	TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));
+TCPManager * TCPManagerInit(){
+	return (TCPManager*)malloc(sizeof(TCPManager));
+}
+
+
+int TCPManagerCreate(TCPManager * tcpmanager, int TCPport){
 	
 	int pfd = TCPSocketCreate();
-	TCPSocketBind(pfd, port);
+	TCPSocketBind(pfd, TCPport);
 	if(TCPSocketListen(pfd)==-1) exit(1);
 	
 	tcpmanager->pfd = pfd;
 	tcpmanager->sockets[0] = 0;
 	//tcpmanager->buffer = (Buffer*)malloc(sizeof(Buffer));
 
-	return tcpmanager;
+	return 0;
 }
 
 int TCPManagerArm( TCPManager * tcpmanager, fd_set * rfds, int * maxfd ){

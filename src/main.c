@@ -2,14 +2,9 @@
 #include "server.h"
 
 int main(int argc, char **argv){
-	
 	Server * server;
 	
-	server = ServerInit(atoi(argv[2]));
-	
-	ServerConfigPort(server, 58002);
-	if (argc > 1) ServerConfigPort(server, atoi(argv[1]));
-	
+	server = ServerInit(argc, argv);
 	ServerStart(server);
 	ServerStop(server);
 	
