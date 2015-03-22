@@ -97,8 +97,8 @@ int ServerStart(Server * server){
 		
 		if(counter == 0) continue;
 
-		n = RingManagerReq(server->ringmanager, &rfds, buffer);
-		ServerProcRingReq(server, buffer, n);
+		n = RingManagerReq(server->ringmanager, &rfds, request);
+		ServerProcRingReq(server, request);
 		
 		n = TCPManagerReq(server->tcpmanager, &rfds, request);
 		ServerProcTCPReq(server, request);
@@ -118,9 +118,20 @@ int ServerStop(Server * server){
 	return 0;
 }
 
-int ServerProcRingReq(Server * server, char * buffer, int n){
-	if(n <= 0) return n;
-
+int ServerProcRingReq(Server * server, Request * request){
+ int i = 0;
+  
+  if(RequestGetArgCount(request) <= 0) return 0;
+  
+  printf("External wrote: ");
+  
+  for(i = 0; i<RequestGetArgCount(request); i++){
+    printf("%s,", RequestGetArg(request, i));
+    fflush(stdout);
+  }
+  
+  printf("\n");
+  
 	return 1;
 }
 

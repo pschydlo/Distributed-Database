@@ -71,8 +71,6 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 	
   write(fd, "NEW i i.IP i.PORT\n", 17);
   
-	/*write(fd, "NEW 12121 12\n", 13);		This code was here just to test*/
-
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
 	
@@ -129,17 +127,19 @@ RingManager * RingManagerInit(){
 	return ringmanager;
 }
 
-int RingManagerReq(RingManager * ringmanager,fd_set * rfds, char * buffer){
+int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	
+  char buffer[128];
+  
 	int n = 0;
 	
 	if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
 		if((n=read(ringmanager->predi->fd,buffer,128))!=0){
-			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			buffer[n]='\0';
-			printf("Predi wrote: %s",buffer);
-			fflush(stdout);
-			/*write(ringmanager->predi->fd, buffer, 6);*/
+			if(n==-1) exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
+			buffer[n] = '\0';
+      
+			RequestParseString(request, buffer);
+			
 			return 1;
 		}
 	}
@@ -147,10 +147,11 @@ int RingManagerReq(RingManager * ringmanager,fd_set * rfds, char * buffer){
 	if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){
 		if((n=read(ringmanager->succi->fd,buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			buffer[n]='\0';
-			printf("Succi wrote: %s",buffer);
-			fflush(stdout);
-			return 1;
+			buffer[n] = '\0';
+			
+      RequestParseString(request, buffer);
+			
+      return 1;
 		}
 	}
 	
