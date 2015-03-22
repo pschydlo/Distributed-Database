@@ -48,6 +48,16 @@ void RingManagerQuery(RingManager * ringmanager, int id){
   if(ringmanager->succi != NULL) write(ringmanager->succi->fd, query, strlen(query));
 }
 
+void RingManagerRsp(RingManager * ringmanager, int id, int asker, char * ip){
+  char query[20];
+  sprintf(query, "RSP %d %d %s\n", id, id, ip);
+  
+  printf("Your query: %s", query);
+  fflush(stdout);
+  
+  if(ringmanager->predi != NULL) write(ringmanager->predi->fd, query, strlen(query));
+}
+
 int RingManagerStatus(RingManager * ringmanager){
 	
 	printf("Anel %i | Id %i ", ringmanager->ring, ringmanager->id);

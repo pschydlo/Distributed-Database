@@ -225,6 +225,7 @@ int ServerProcUIReq(Server * server, Request * request){
 		/*Reset all succi, predi, etc*/
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
+  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 1, 1, "127.0.0.1");
 	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
 		if(count < 2) return 0;
     
