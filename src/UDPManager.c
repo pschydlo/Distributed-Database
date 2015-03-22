@@ -42,3 +42,7 @@ UDPManager * UDPManagerInit(){
 	udpmanager->port = 58000;
 	return udpmanager;
 }
+
+void UDPManagerStop ( UDPManager * udpmanager){
+  free(udpmanager->addr);
+}

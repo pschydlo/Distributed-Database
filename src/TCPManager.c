@@ -10,7 +10,6 @@ TCPManager * TCPManagerInit(){
 	return (TCPManager*)malloc(sizeof(TCPManager));
 }
 
-
 int TCPManagerStart(TCPManager * tcpmanager, int TCPport){
 	
 	int pfd = TCPSocketCreate();

@@ -15,11 +15,11 @@ int ServerProcArg(Server * server, int argc, char ** argv){
 	char * ringPort = NULL;
 	char * bootIP = NULL;
 	char * bootPort = NULL;
-	int i, read;
+	int i, opt;
 
 	opterr = 0;
-	while ((read = getopt(argc, argv, "t:i:p:")) != -1)
-		switch (read){					/*I'm sure you can probably clean up this switch somehow, i'll leave that to you*/
+	while ((opt = getopt(argc, argv, "t:i:p:")) != -1){
+		switch (opt){					/*I'm sure you can probably clean up this switch somehow, i'll leave that to you*/
 			case 't':
 				ringPort = optarg;
 				break;
@@ -44,13 +44,15 @@ int ServerProcArg(Server * server, int argc, char ** argv){
 			default:
 				return 0;
 		}
+  }
+  
 	printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
 
 	for (i = optind; i < argc; i++)
 		fprintf (stderr, "Argumento invalido %s\n", argv[i]);
 	
 	if(ringPort != NULL)	server->TCPport = atoi(ringPort);
-	if(bootIP != NULL)		UDPManagerSetIP(server->udpmanager, bootIP);
+	if(bootIP   != NULL)	UDPManagerSetIP(server->udpmanager, bootIP);
 	if(bootPort != NULL)	UDPManagerSetPort(server->udpmanager, atoi(bootPort));
 
 	return 0;	
@@ -77,11 +79,11 @@ int ServerStart(Server * server){
 	int maxfd, counter;
 	fd_set rfds;
 	int n = 0;
+  
 	Request *request = RequestCreate();
-	
 	RequestReset(request);
 	
-	/*TCPManagerCreate(server->tcpmanager, server->TCPport);*/
+	TCPManagerStart(server->tcpmanager, server->TCPport);
 	UDPManagerCreate(server->udpmanager);
 	
 	while(!(server->shutdown)){
@@ -93,33 +95,43 @@ int ServerStart(Server * server){
 		TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
 		
 		counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
-		if(counter<0) exit(1);
 		
+    if(counter<0) exit(1);
 		if(counter == 0) continue;
 
+    RequestReset(request);
 		n = RingManagerReq(server->ringmanager, &rfds, request);
-		ServerProcRingReq(server, request);
+		if(n) ServerProcRingReq(server, request);
 		
+    RequestReset(request);
 		n = TCPManagerReq(server->tcpmanager, &rfds, request);
-		ServerProcTCPReq(server, request);
+		if(n) ServerProcTCPReq(server, request);
 		
+    RequestReset(request);
 		n = UIManagerReq(&rfds, request);
 		if(n) ServerProcUIReq(server, request);
 	}
+  
+  RequestDestroy(request);
+  
 	return 0;
 }
 
 int ServerStop(Server * server){
-									/*To do: close all active fd's*/
-	free(server->udpmanager);	/*Haven't freed addr yet*/
+  /*To do: close all active fd's*/
+	
+  UDPManagerStop(server->udpmanager);
+  free(server->udpmanager);	/*Haven't freed addr yet*/
 	free(server->tcpmanager);
 	free(server->ringmanager);
-	/*free(request);*/
-	return 0;
+  
+  /*free(request);*/
+	
+  return 0;
 }
 
 int ServerProcRingReq(Server * server, Request * request){
- int i = 0;
+  int i = 0;
   
   if(RequestGetArgCount(request) <= 0) return 0;
   
@@ -152,8 +164,9 @@ int ServerProcTCPReq(Server * server, Request * request){
   
   if(strcmp(RequestGetArg(request,0),"NEW") == 0){
     if(RequestGetArgCount(request) != 4) return 0;
-      RingManagerNew(server->ringmanager, RequestGetFD(request), "127.0.0.1", 9002);
-    }
+    
+    RingManagerNew(server->ringmanager, RequestGetFD(request), "127.0.0.1", 9002);
+  }
   
   return 1;
 }
@@ -170,13 +183,14 @@ int ServerProcUIReq(Server * server, Request * request){
 		printf("%s ", RequestGetArg(request, i));
 		fflush(stdout);
 	}
+  
 	printf("\n");
 	
-														/* Idk if you want to leave the translator here,
-														 * we should probably make a seperate module for it,
-														 * and here we should leave the interpretation for
-														 * CON, QRY, etc, perhaps also in a module, as you love to do.*/
-	
+  /* Idk if you want to leave the translator here,
+   * we should probably make a seperate module for it,
+   * and here we should leave the interpretation for
+   * CON, QRY, etc, perhaps also in a module, as you love to do.*/
+
 	command = RequestGetArg(request,0);
 	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
@@ -213,8 +227,9 @@ int ServerProcUIReq(Server * server, Request * request){
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
 	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
 		if(count < 2) return 0;
+    
 		int search = atoi(RequestGetArg(request, 1));
-		int id = RingManagerId(server->ringmanager);
+		int id     = RingManagerId(server->ringmanager);
 		
 		if(RingManagerCheck(server->ringmanager, search)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
 		else RingManagerMsg(server->ringmanager, 0, "QRY id search"); /*Add int->string support eventually*/

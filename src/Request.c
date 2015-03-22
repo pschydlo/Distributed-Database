@@ -42,6 +42,10 @@ Request * RequestCreate(){
 	return (Request*)malloc(sizeof(Request));
 }
 
+void RequestDestroy(Request * request){
+	free(request);
+}
+
 void RequestReset(Request * request){
 	request->argc = 0;
   request->fd   = -1;

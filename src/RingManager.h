@@ -1,8 +1,8 @@
+#include "Request.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "TCPSocket.h"
 #include <string.h>
-#include "Request.h"
 
 typedef struct RingManager RingManager;
 
@@ -27,4 +27,4 @@ int RingManagerRes(RingManager * ringmanager, char * buffer, int nbytes);
 
 RingManager * RingManagerInit();
 
-RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request);
+int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request);

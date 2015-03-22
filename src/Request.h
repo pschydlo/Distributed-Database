@@ -16,6 +16,7 @@ char * RequestGetArg(Request * request, int n);
 int RequestGetArgCount(Request * request);
 
 Request * RequestCreate();
+void RequestDestroy(Request * request);
 
 int RequestWrite(Request * request, char * buffer);
 
