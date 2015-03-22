@@ -15,4 +15,6 @@ int UDPManagerJoin(UDPManager * udpmanager, int ring);
 
 int UDPManagerCreate(UDPManager * udpmanager);
 
+void UDPManagerStop ( UDPManager * udpmanager);
+
 UDPManager * UDPManagerInit();

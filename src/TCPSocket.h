@@ -7,3 +7,9 @@
 #include <string.h>
 
 int TCPSocketCreate();
+int TCPSocketConnect(int fd, char * ip, int port);
+
+int TCPSocketBind(int fd, int port);
+int TCPSocketListen(int fd);
+int TCPSocketAccept(int fd);
+

@@ -3,6 +3,7 @@
 #include <sys/select.h>
 #include <string.h>
 #include "Request.h"
+#include <unistd.h>
 
 int UIManagerParse(Request * request, char * buffer);
 

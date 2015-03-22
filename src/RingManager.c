@@ -13,6 +13,7 @@ struct RingManager{
 	Peer * predi;
 	int ring;
 	int id;
+  int TCPport;
 };
 
 int RingManagerId(RingManager * ringmanager){	/*Necessary function - will probably remain*/
@@ -38,9 +39,9 @@ void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
 }
 
 
-void RingManagerQuery(RingManager * ringmanager, int id){
+void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
   char query[20];
-  sprintf(query, "QRY %d %d\n", id, id);
+  sprintf(query, "QRY %d %d\n", askerID, searchID);
   
   printf("Your query: %s", query);
   fflush(stdout);
@@ -48,9 +49,9 @@ void RingManagerQuery(RingManager * ringmanager, int id){
   if(ringmanager->succi != NULL) write(ringmanager->succi->fd, query, strlen(query));
 }
 
-void RingManagerRsp(RingManager * ringmanager, int id, int asker, char * ip){
+void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port){
   char query[20];
-  sprintf(query, "RSP %d %d %s\n", id, id, ip);
+  sprintf(query, "RSP %d %d %d %s %d\n", askerID, searchID, responsibleID, ip, port);
   
   printf("Your query: %s", query);
   fflush(stdout);
@@ -65,20 +66,32 @@ int RingManagerStatus(RingManager * ringmanager){
 	else printf("Nao existe predecessor ");
 	if(ringmanager->succi != NULL) printf("| Successor %i", ringmanager->succi->id);
 	else printf("Nao existe successor ");
-	printf("\n");
+	printf("| Ext facing TCP: %d", ringmanager->TCPport);
+  printf("\n");
+  
 	
 	return 0;
 }
 
-int RingManagerNew(RingManager * ringmanager, int fd, char * ip, int port){
+int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port){
 	if(ringmanager->predi == NULL){
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
 	}else{
-		write(ringmanager->predi->fd, "CON i i.IP i.TCP\n", 17);
+    char msg[20];
+    sprintf(msg, "CON 1 %s %d", ip, port); 
+            
+		write(ringmanager->predi->fd, msg, strlen(msg));
 		close(ringmanager->predi->fd);
 	}
   
   ringmanager->predi->fd = fd;
+  ringmanager->predi->id = id;
+  
+  if(ringmanager->succi == NULL){
+    RingManagerConnect(ringmanager, 1, id, ip, port);
+  }
+  
+  return 1;
 }
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, int port){
@@ -89,10 +102,14 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 		printf("Could not connect to predi.");
 		exit(1);
 	} /*ERROR! checking to be done*/
+  
 	ringmanager->id   = id;
 	ringmanager->ring = ring;
 	
-  write(fd, "NEW i i.IP i.PORT\n", 17);
+  char msg[25];
+  sprintf(msg, "NEW %d %s %d\n", id, "127.0.0.1", ringmanager->TCPport); 
+  
+  write(fd, msg, strlen(msg));
   
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
@@ -119,11 +136,10 @@ int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
 	return n;
 }
 
-int RingManagerRes(RingManager * ringmanager, char * buffer, int nbytes){
+int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes){
 	
 	char * ptr = buffer;
 	int nwritten;
-	int fd;
 	
 	while(nbytes>0){
 		nwritten=write(fd,ptr,nbytes);
@@ -131,21 +147,20 @@ int RingManagerRes(RingManager * ringmanager, char * buffer, int nbytes){
 		nbytes-=nwritten;
 		ptr+=nwritten;
 	}
+  
+  return 1;
 }
 	
-
-RingManager * RingManagerInit(){
+RingManager * RingManagerInit(int TCPport){
 	
-	int addrlen, fd, n;
-	struct sockaddr_in addr;
 	RingManager * ringmanager;
-	char buffer[400];
-	
+
 	ringmanager = (RingManager*)malloc(sizeof(RingManager));
 	ringmanager->succi = NULL;
 	ringmanager->predi = NULL;
 	ringmanager->id    = 0;		/*INITIALIZATION VALUES PLZ CHANGE*/
 	ringmanager->ring  = 0;		/*TEST ONLY*/
+  ringmanager->TCPport = TCPport;
 	
 	return ringmanager;
 }

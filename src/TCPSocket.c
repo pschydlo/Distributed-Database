@@ -3,7 +3,7 @@
 int TCPSocketAccept(int fd){
 	
 	struct sockaddr_in addr;
-	int addrlen = sizeof(struct sockaddr_in);
+	socklen_t addrlen = sizeof(struct sockaddr_in);
 	
 	return accept(fd,(struct sockaddr*)&addr,&addrlen);
 }

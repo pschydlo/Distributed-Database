@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g
+CFLAGS=-g -Wall
 DEPS = Request.h TCPSocket.h TCPManager.h UDPManager.h RingManager.h UIManager.h server.h main.h 
 
 OBJ = Request.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o 

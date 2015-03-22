@@ -61,3 +61,7 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 
 	return 0;
 }
+
+void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
+  tcpmanager->sockets[0] = -1;
+};

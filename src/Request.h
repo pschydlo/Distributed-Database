@@ -22,4 +22,6 @@ int RequestWrite(Request * request, char * buffer);
 
 char * RequestGetBuffer(Request * request);
 
+int RequestPushArg(Request * request, char * memstart, int length);
+
 #endif
