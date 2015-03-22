@@ -1,5 +1,7 @@
 #include "RingManager.h"
 
+#define PREDI 0
+#define SUCCI 1
 
 struct Peer{
 	int id, fd;
@@ -24,15 +26,26 @@ int d(int k, int l){			/*Possibility to place this module somewhere else, for ot
 
 int RingManagerCheck(RingManager * ringmanager, int k){	/*Quick un-modularized function, can be substituted by more general function*/
 	int id = ringmanager->id;
-	int predid = ringmanager->predi->id;
+  int predid = (ringmanager->predi ? ringmanager->predi->id : 0);  /*Check if predi exists or not!!*/
 	
 	if(d(k, id) < d(k, predid)) return 1;
 	return 0;
-	}
+}
 
 void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
 	if(dest == 0 && ringmanager->succi != NULL) write(ringmanager->succi->fd, msg, strlen(msg));
 	if(dest == 1 && ringmanager->predi != NULL) write(ringmanager->predi->fd, msg, strlen(msg));
+}
+
+
+void RingManagerQuery(RingManager * ringmanager, int id){
+  char query[20];
+  sprintf(query, "QRY %d %d\n", id, id);
+  
+  printf("Your query: %s", query);
+  fflush(stdout);
+  
+  if(ringmanager->succi != NULL) write(ringmanager->succi->fd, query, strlen(query));
 }
 
 int RingManagerStatus(RingManager * ringmanager){
@@ -148,6 +161,8 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 		if((n=read(ringmanager->succi->fd,buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n] = '\0';
+      
+      /* Check if request is completely in buffer! (could happen that he only receives half \n */
 			
       RequestParseString(request, buffer);
 			

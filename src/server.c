@@ -163,7 +163,7 @@ int ServerProcTCPReq(Server * server, Request * request){
   printf("\n");
   
   if(strcmp(RequestGetArg(request,0),"NEW") == 0){
-    if(RequestGetArgCount(request) != 4) return 0;
+    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
     
     RingManagerNew(server->ringmanager, RequestGetFD(request), "127.0.0.1", 9002);
   }
@@ -232,7 +232,7 @@ int ServerProcUIReq(Server * server, Request * request){
 		int id     = RingManagerId(server->ringmanager);
 		
 		if(RingManagerCheck(server->ringmanager, search)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
-		else RingManagerMsg(server->ringmanager, 0, "QRY id search"); /*Add int->string support eventually*/
+		else RingManagerQuery(server->ringmanager, search); /*Add int->string support eventually*/
 	}
 	else if(strcmp(RequestGetArg(request,0),"boop1") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
 	else if(strcmp(RequestGetArg(request,0),"boop2") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
