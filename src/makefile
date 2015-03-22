@@ -1,29 +1,14 @@
-CC = gcc
+CC=gcc
+CFLAGS=-g
+DEPS = Request.h TCPSocket.h TCPManager.h UDPManager.h RingManager.h UIManager.h server.h main.h 
 
-SOURCES = Request.c TCPSocket.c TCPManager.c UDPManager.c RingManager.c UIManager.c server.c main.c 
+OBJ = Request.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o 
 
-OBJECTS = Request.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-ddt: $(OBJECTS)
-	gcc -o ddt $(OBJECTS)
-
-server.o: server.h
-
-RingManager.o: RingManager.h
-
-UIManager.o: UIManager.h
-
-UDPManager.o: UDPManager.h
-
-TCPManager.o: TCPManager.h
-
-TCPSocket.o: TCPSocket.h
-
-Request.o: Request.h
+ddt: $(OBJ)
+	gcc -o ddt $^ $(CFLAGS)
 
 clean:
 	rm -f *o core ddt *~
-
-depend:
-	makedepend $(SOURCES)
-# LOL
