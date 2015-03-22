@@ -84,17 +84,9 @@ int ServerStart(Server * server){
 	/*TCPManagerCreate(server->tcpmanager, server->TCPport);*/
 	UDPManagerCreate(server->udpmanager);
 	
-	int fd = TCPSocketCreate();
-	TCPSocketBind(fd, server->TCPport);
-	
-	if(TCPSocketListen(fd)==-1)exit(1);
-	
 	while(!(server->shutdown)){
 		
 		FD_ZERO(&rfds); maxfd=0;
-		
-		FD_SET(fd, &rfds);
-		maxfd = (fd > maxfd ? fd : maxfd);
 		
 		UIManagerArm(&rfds,&maxfd);
 		RingManagerArm(server->ringmanager,&rfds,&maxfd);
@@ -113,11 +105,6 @@ int ServerStart(Server * server){
 		
 		n = UIManagerReq(&rfds, request);
 		if(n) ServerProcUIReq(server, request);
-		
-		if(FD_ISSET(fd, &rfds)){
-			int newfd = TCPSocketAccept(fd);
-			RingManagerNew(server->ringmanager, newfd, 560560565);
-		}
 	}
 	return 0;
 }
@@ -139,7 +126,25 @@ int ServerProcRingReq(Server * server, char * buffer, int n){
 
 int ServerProcTCPReq(Server * server, Request * request){
 
-	return 1;
+  int i = 0;
+  
+  if(RequestGetArgCount(request) <= 0) return 0;
+  
+  printf("External wrote: ");
+  
+  for(i = 0; i<RequestGetArgCount(request); i++){
+    printf("%s,", RequestGetArg(request, i));
+    fflush(stdout);
+  }
+  
+  printf("\n");
+  
+  if(strcmp(RequestGetArg(request,0),"NEW") == 0){
+    if(RequestGetArgCount(request) != 4) return 0;
+      RingManagerNew(server->ringmanager, RequestGetFD(request), "127.0.0.1", 9002);
+    }
+  
+  return 1;
 }
 
 int ServerProcUIReq(Server * server, Request * request){

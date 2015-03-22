@@ -5,6 +5,13 @@
 
 typedef struct Request Request;
 
+void RequestReset(Request * request);
+
+void RequestAddFD(Request * request, int fd);
+int RequestGetFD(Request * request);
+
+int RequestParseString(Request * request, char * buffer);
+  
 char * RequestGetArg(Request * request, int n);
 int RequestGetArgCount(Request * request);
 

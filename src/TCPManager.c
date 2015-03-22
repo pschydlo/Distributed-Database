@@ -11,7 +11,7 @@ TCPManager * TCPManagerInit(){
 }
 
 
-int TCPManagerCreate(TCPManager * tcpmanager, int TCPport){
+int TCPManagerStart(TCPManager * tcpmanager, int TCPport){
 	
 	int pfd = TCPSocketCreate();
 	TCPSocketBind(pfd, TCPport);
@@ -52,10 +52,13 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 		if((n=read(tcpmanager->sockets[0],buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';
-			printf("External wrote: %s",buffer);
-			return 1;
+			
+      RequestParseString(request, buffer);
+      RequestAddFD(request, tcpmanager->sockets[0]);
+			
+      return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }

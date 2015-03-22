@@ -47,15 +47,15 @@ int RingManagerStatus(RingManager * ringmanager){
 	return 0;
 }
 
-int RingManagerNew(RingManager * ringmanager, int fd, int port){
+int RingManagerNew(RingManager * ringmanager, int fd, char * ip, int port){
 	if(ringmanager->predi == NULL){
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
-		ringmanager->predi->fd = fd;
 	}else{
 		write(ringmanager->predi->fd, "CON i i.IP i.TCP\n", 17);
 		close(ringmanager->predi->fd);
-		ringmanager->predi->fd = fd;
 	}
+  
+  ringmanager->predi->fd = fd;
 }
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, int port){
@@ -65,10 +65,12 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 	if((n = TCPSocketConnect(fd, ip, port)) < 0) {
 		printf("Could not connect to predi.");
 		exit(1);
-	} /*ERRORORORORORO! checking to be done*/
+	} /*ERROR! checking to be done*/
 	ringmanager->id   = id;
 	ringmanager->ring = ring;
 	
+  write(fd, "NEW i i.IP i.PORT\n", 17);
+  
 	/*write(fd, "NEW 12121 12\n", 13);		This code was here just to test*/
 
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
