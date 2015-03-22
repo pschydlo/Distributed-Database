@@ -149,12 +149,23 @@ int ServerProcRingReq(Server * server, Request * request){
     int originID = atoi(RequestGetArg(request, 1));
     int searchID = atoi(RequestGetArg(request, 2));
     
-    if(originID ==  RingManagerId(server->ringmanager)){
-      printf("This one is ours!");
-      fflush(stdout);
-    }else{
+    //if(originID ==  RingManagerId(server->ringmanager)){
+      //printf("This one is ours!");
+      //fflush(stdout);
+    //}else{
       RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
-    }        
+    //}        
+  }
+  
+  if(strcmp(RequestGetArg(request,0),"CON") == 0){
+    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
+    
+    int destinationPort  = atoi(RequestGetArg(request, 3));
+    char * destinationIP = RequestGetArg(request, 2);
+    int destinationID    = atoi(RequestGetArg(request, 1));
+    
+    RingManagerConnect(server->ringmanager, 1, destinationID, destinationIP, destinationPort);
+    TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
   }
   
 	return 1;
@@ -182,7 +193,18 @@ int ServerProcTCPReq(Server * server, Request * request){
     char * originIP = RequestGetArg(request, 2);
     int originID    = atoi(RequestGetArg(request, 1));
     
-    RingManagerNew(server->ringmanager, originID, RequestGetFD(request), originIP, originPort);
+    RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
+    TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
+  }
+  
+  if(strcmp(RequestGetArg(request,0),"CON") == 0){
+    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
+    
+    int destinationPort  = atoi(RequestGetArg(request, 3));
+    char * destinationIP = RequestGetArg(request, 2);
+    int destinationID    = atoi(RequestGetArg(request, 1));
+    
+    RingManagerConnect(server->ringmanager, 1, destinationID, destinationIP, destinationPort);
     TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
   }
   
@@ -253,8 +275,8 @@ int ServerProcUIReq(Server * server, Request * request){
 		if(RingManagerCheck(server->ringmanager, search)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
 		else RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
 	}
-	else if(strcmp(RequestGetArg(request,0),"boop1") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
-	else if(strcmp(RequestGetArg(request,0),"boop2") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
+	else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
+	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
 	else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
 	else printf("Comando não reconhecido\n");
 	

@@ -43,7 +43,7 @@ void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
   char query[20];
   sprintf(query, "QRY %d %d\n", askerID, searchID);
   
-  printf("Your query: %s", query);
+  printf("Your message: %s", query);
   fflush(stdout);
   
   if(ringmanager->succi != NULL) write(ringmanager->succi->fd, query, strlen(query));
@@ -53,7 +53,7 @@ void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int re
   char query[20];
   sprintf(query, "RSP %d %d %d %s %d\n", askerID, searchID, responsibleID, ip, port);
   
-  printf("Your query: %s", query);
+  printf("Your message: %s", query);
   fflush(stdout);
   
   if(ringmanager->predi != NULL) write(ringmanager->predi->fd, query, strlen(query));
@@ -78,8 +78,11 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
 	}else{
     char msg[20];
-    sprintf(msg, "CON 1 %s %d", ip, port); 
+    sprintf(msg, "CON 1 %s %d\n", ip, port); 
             
+    printf("Predi: %d", ringmanager->predi->fd);
+    fflush(stdout);
+    
 		write(ringmanager->predi->fd, msg, strlen(msg));
 		close(ringmanager->predi->fd);
 	}
@@ -99,6 +102,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
 	int n, fd = TCPSocketCreate();
 
 	if((n = TCPSocketConnect(fd, ip, port)) < 0) {
+    printf("IP: %s, Port: %d", ip, port);
 		printf("Could not connect to predi.");
 		exit(1);
 	} /*ERROR! checking to be done*/
