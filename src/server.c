@@ -160,12 +160,13 @@ int ServerProcRingReq(Server * server, Request * request){
   if(strcmp(RequestGetArg(request,0),"CON") == 0){
     //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
     
-    int destinationPort  = atoi(RequestGetArg(request, 3));
-    char * destinationIP = RequestGetArg(request, 2);
-    int destinationID    = atoi(RequestGetArg(request, 1));
+    int id   = RingManagerId(server->ringmanager);
+    int succiID    = atoi(RequestGetArg(request, 1));
+    char * succiIP = RequestGetArg(request, 2); 
+    int succiPort = atoi(RequestGetArg(request, 3)); 
+                    
     
-    RingManagerConnect(server->ringmanager, 1, destinationID, destinationIP, destinationPort);
-    TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
+		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
   }
   
 	return 1;
@@ -200,12 +201,13 @@ int ServerProcTCPReq(Server * server, Request * request){
   if(strcmp(RequestGetArg(request,0),"CON") == 0){
     //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
     
-    int destinationPort  = atoi(RequestGetArg(request, 3));
-    char * destinationIP = RequestGetArg(request, 2);
-    int destinationID    = atoi(RequestGetArg(request, 1));
+    int id   = RingManagerId(server->ringmanager);
+    int succiID    = atoi(RequestGetArg(request, 1));
+    char * succiIP = RequestGetArg(request, 2); 
+    int succiPort = atoi(RequestGetArg(request, 3)); 
+                    
     
-    RingManagerConnect(server->ringmanager, 1, destinationID, destinationIP, destinationPort);
-    TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
+		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
   }
   
   return 1;
@@ -241,14 +243,16 @@ int ServerProcUIReq(Server * server, Request * request){
 			UDPManagerJoin(server->udpmanager, 9);
 			/*else send(ID)*/
 			/*receive "SUCC" from succi*/
-		}		
-		RingManagerConnect(server->ringmanager, 			/* It seems really annoying to have to get many things only Request knows to feed it into RingManager
-															 *	Perhaps we should make RM know what Request is, to feed it directly in?
-															 */
-						  atoi(RequestGetArg(request, 2)),
-						  atoi(RequestGetArg(request, 3)),
-						  RequestGetArg(request, 4),
-						  atoi(RequestGetArg(request, 5)));
+		}
+    
+    int ring = atoi(RequestGetArg(request, 1));
+    int id   = atoi(RequestGetArg(request, 2));
+    int succiID    = atoi(RequestGetArg(request, 3));
+    char * succiIP = RequestGetArg(request, 4); 
+    int succiPort = atoi(RequestGetArg(request, 5)); 
+                    
+    
+		RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);      
 	}
 	else if(strcmp(command,"leave") == 0){
 		/* To do: Check if only one in ring, if so,

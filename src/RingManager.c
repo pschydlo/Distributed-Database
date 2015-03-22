@@ -78,9 +78,9 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
 	}else{
     char msg[20];
-    sprintf(msg, "CON 1 %s %d\n", ip, port); 
+    sprintf(msg, "CON %d %s %d\n", id, ip, port); 
             
-    printf("Predi: %d", ringmanager->predi->fd);
+    printf("Predi: %d, ID: %d", ringmanager->predi->fd, id);
     fflush(stdout);
     
 		write(ringmanager->predi->fd, msg, strlen(msg));
@@ -91,13 +91,13 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
   ringmanager->predi->id = id;
   
   if(ringmanager->succi == NULL){
-    RingManagerConnect(ringmanager, 1, id, ip, port);
+    RingManagerConnect(ringmanager, 1, ringmanager->id, id, ip, port);
   }
   
   return 1;
 }
 
-int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, int port){
+int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * ip, int port){
 	
 	int n, fd = TCPSocketCreate();
 
@@ -117,6 +117,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, i
   
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
+  ringmanager->succi->id = succiID;
 	
 	return n;
 }

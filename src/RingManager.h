@@ -19,7 +19,7 @@ void RingManagerMsg(RingManager * ringmanager, int dest, char * msg);
 
 int RingManagerStatus(RingManager * ringmanager);
 
-int RingManagerConnect(RingManager * ringmanager, int ring, int id, char * ip, int port);
+int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * ip, int port);
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port);
 
 int RingManagerArm(RingManager * ringmanager, fd_set * rfds, int * maxfd);
