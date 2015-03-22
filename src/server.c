@@ -123,7 +123,7 @@ int ServerProcRingReq(Server * server, Request * request){
   
   if(RequestGetArgCount(request) <= 0) return 0;
   
-  printf("External wrote: ");
+  printf("Ring wrote: ");
   
   for(i = 0; i<RequestGetArgCount(request); i++){
     printf("%s,", RequestGetArg(request, i));
