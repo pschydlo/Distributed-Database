@@ -42,7 +42,7 @@ void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
 
 
 void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
-  char query[20];
+  char query[50];
   sprintf(query, "QRY %d %d\n", askerID, searchID);
   
   printf("Your message: %s", query);
@@ -52,7 +52,7 @@ void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
 }
 
 void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port){
-  char query[20];
+  char query[50];
   sprintf(query, "RSP %d %d %d %s %d\n", askerID, searchID, responsibleID, ip, port);
   
   printf("Your message: %s", query);
@@ -79,7 +79,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 	if(ringmanager->predi == NULL){
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
 	}else{
-    char msg[20];
+    char msg[50];
     sprintf(msg, "CON %d %s %d\n", id, ip, port); 
             
     printf("Predi: %d, ID: %d", ringmanager->predi->fd, id);
@@ -112,7 +112,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	ringmanager->id   = id;
 	ringmanager->ring = ring;
 	
-  char msg[25];
+  char msg[50];
   sprintf(msg, "NEW %d %s %d\n", id, "127.0.0.1", ringmanager->TCPport); 
   
   write(fd, msg, strlen(msg));
