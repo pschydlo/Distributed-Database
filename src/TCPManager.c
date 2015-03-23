@@ -51,6 +51,7 @@ int TCPManagerArm( TCPManager * tcpmanager, fd_set * rfds, int * maxfd ){
 int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 
 	int i = 0, n = 0;
+	int reqcount = 0;
 	
 	char buffer[128];
 	
@@ -66,26 +67,38 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 		
 		if(i == MAX_CON){
 			write(newfd, "Busy try again later.\n", 22);
+			close(newfd);
 		} 
-		
 	}
 	
+	int fopts = 0;
+
 	for(i = 0; i < MAX_CON; i++){
 		if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
+		
+		if (fcntl(tcpmanager->sockets[i], F_GETFD) != -1) {
+			printf("Closed this socket!");
+			fflush(stdout);
+			
+			close(tcpmanager->sockets[i]);
+			tcpmanager->sockets[i] = -1;
+		}
+		
+		if(reqcount == 1) continue;
 		
 		if((n=read(tcpmanager->sockets[i],buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			buffer[n]='\0';
 			
-      RequestParseString(request, buffer);
-      RequestAddFD(request, tcpmanager->sockets[i]);
-			
-      return 1;
+			RequestParseString(request, buffer);
+			RequestAddFD(request, tcpmanager->sockets[i]);
+				
+			reqcount++;
 		}
 	}
 	
 
-	return 0;
+	return reqcount;
 }
 
 void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
