@@ -10,6 +10,7 @@ typedef struct RingManager RingManager;
 typedef struct Peer Peer;
 
 int RingManagerId(RingManager * ringmanager);
+int RingManagerSetId(RingManager * ringmanager, int id);
 
 int d(int k, int l);
 

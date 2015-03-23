@@ -16,8 +16,13 @@ struct RingManager{
   int TCPport;
 };
 
-int RingManagerId(RingManager * ringmanager){	/*Necessary function - will probably remain*/
+int RingManagerId(RingManager * ringmanager){
 	return ringmanager->id;
+}
+
+int RingManagerSetId(RingManager * ringmanager, int id){
+	ringmanager->id = id;
+	return 0;
 }
 
 int d(int k, int l){			/*Possibility to place this module somewhere else, for other comparisons as may be needed*/

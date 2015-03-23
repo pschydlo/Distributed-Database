@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -12,7 +13,7 @@ int UDPManagerSetIP(UDPManager * udpmanager, char * bootIP);
 
 int UDPManagerSetPort(UDPManager * udpmanager, int bootPort);
 
-int UDPManagerJoin(UDPManager * udpmanager, int ring);
+int UDPManagerJoin(UDPManager * udpmanager, int ring, int id);
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
 

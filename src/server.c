@@ -284,7 +284,8 @@ int ServerProcUIReq(Server * server, Request * request){
 		if(count == 3){
 			/*Send UDP BQRY x*/
 			/*if(BQRY == EMPTY)*/
-			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)));
+			RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));
+			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
 			/*else send(ID)*/
 			/*receive "SUCC" from succi*/
 			return 0;

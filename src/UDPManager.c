@@ -17,9 +17,12 @@ int UDPManagerSetPort(UDPManager * udpmanager, int bootPort){
 	return 0;
 }
 
-int UDPManagerJoin(UDPManager * udpmanager, int ring){
+int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){
 	/*strcat stuff here to join REG*/
-	if(sendto(udpmanager->fd, "REG 9 0 1.2.3.4 1234", 20, 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr)) == -1) exit(1);
+	char * ip = "1.2.3.4";
+	char buffer[128];
+	sprintf(buffer, "REG %d %d %s %i", ring, id, ip, udpmanager->port);
+	if(sendto(udpmanager->fd, buffer, strlen(buffer), 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr)) == -1) exit(1);
 	return 0;
 }
 
