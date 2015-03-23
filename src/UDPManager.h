@@ -14,8 +14,12 @@ int UDPManagerSetPort(UDPManager * udpmanager, int bootPort);
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring);
 
+int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
+
 int UDPManagerCreate(UDPManager * udpmanager);
 
 void UDPManagerStop ( UDPManager * udpmanager);
 
 UDPManager * UDPManagerInit();
+
+int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request);

@@ -23,6 +23,13 @@ int UDPManagerJoin(UDPManager * udpmanager, int ring){
 	return 0;
 }
 
+
+int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
+	FD_SET(udpmanager->fd, rfds);
+	if(udpmanager->fd > *maxfd) *maxfd = udpmanager->fd;
+	return 0;
+}
+
 int UDPManagerCreate(UDPManager * udpmanager){
 	
 	udpmanager->fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -38,7 +45,7 @@ int UDPManagerCreate(UDPManager * udpmanager){
 UDPManager * UDPManagerInit(){
 	UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
 	udpmanager->addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));	/*if you really want to, we can typedef this as sockaddr_in*/
-	udpmanager->ip   = "193.136.138.142";
+	udpmanager->ip   = "193.136.138.142";	/*ip de tejo.tecnico.ulisboa.pt*/
 	udpmanager->port = 58000;
 	return udpmanager;
 }
@@ -54,11 +61,14 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
 	char buffer[128];
 	
 	if(!FD_ISSET(udpmanager->fd, rfds)) return 0;
+	
+	socklen_t addrlen = sizeof(struct sockaddr_in);
 
-	n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr_in));
+	n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)udpmanager->addr, &addrlen);
 	if(n == -1) exit(1);
 	
-	buffer[n] = '\0';
+	buffer[n] = '\n';
+	buffer[n+1] = '\0';
 	
 	RequestParseString(request, buffer);
 	

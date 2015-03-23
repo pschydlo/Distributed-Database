@@ -16,6 +16,7 @@ int ServerProcArg(Server * server, int argc, char ** argv);
 int ServerStart(Server * server);
 int ServerStop(Server * server);
 
+int ServerProcUDPReq(Server * server, Request * request);
 int ServerProcRingReq(Server * server, Request * request);
 int ServerProcTCPReq(Server * server, Request * request);
 int ServerProcUIReq(Server * server, Request * request);
