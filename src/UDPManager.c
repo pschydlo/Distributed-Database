@@ -46,3 +46,21 @@ UDPManager * UDPManagerInit(){
 void UDPManagerStop ( UDPManager * udpmanager){
   free(udpmanager->addr);
 }
+
+int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
+
+	int n = 0;
+	
+	char buffer[128];
+	
+	if(!FD_ISSET(udpmanager->fd, rfds)) return 0;
+
+	n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr_in));
+	if(n == -1) exit(1);
+	
+	buffer[n] = '\0';
+	
+	RequestParseString(request, buffer);
+	
+	return 1;
+}

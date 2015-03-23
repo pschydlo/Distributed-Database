@@ -94,21 +94,25 @@ int ServerStart(Server * server){
 		TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
 		
 		counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
-		
-    if(counter<0) exit(1);
-		if(counter == 0) continue;
+			
+		if(counter<0) exit(1);
+			if(counter == 0) continue;
 
-    RequestReset(request);
-		n = RingManagerReq(server->ringmanager, &rfds, request);
-		if(n) ServerProcRingReq(server, request);
-		
-    RequestReset(request);
-		n = TCPManagerReq(server->tcpmanager, &rfds, request);
-		if(n) ServerProcTCPReq(server, request);
-		
-    RequestReset(request);
-		n = UIManagerReq(&rfds, request);
-		if(n) ServerProcUIReq(server, request);
+		RequestReset(request);
+			n = RingManagerReq(server->ringmanager, &rfds, request);
+			if(n) ServerProcRingReq(server, request);
+			
+		RequestReset(request);
+			n = TCPManagerReq(server->tcpmanager, &rfds, request);
+			if(n) ServerProcTCPReq(server, request);
+			
+		RequestReset(request);
+			n = UDPManagerReq(server->udpmanager, &rfds, request);
+			if(n) ServerProcUDPReq(server, request);
+			
+		RequestReset(request);
+			n = UIManagerReq(&rfds, request);
+			if(n) ServerProcUIReq(server, request);
 	}
   
   RequestDestroy(request);
@@ -200,6 +204,17 @@ int ServerProcRingReq(Server * server, Request * request){
   
 	return 1;
 }
+
+int ServerProcUDPReq(Server * server, Request * request){
+	
+	if(RequestGetArgCount(request) <= 0) return 0;
+	if(RequestGetArgCount(request) == 1){
+	printf("%s\n", RequestGetArg(request, 0));
+	fflush(stdout);
+	}
+	return 0;
+}
+	
 
 int ServerProcTCPReq(Server * server, Request * request){
 
