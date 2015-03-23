@@ -21,15 +21,17 @@ int RingManagerId(RingManager * ringmanager){	/*Necessary function - will probab
 }
 
 int d(int k, int l){			/*Possibility to place this module somewhere else, for other comparisons as may be needed*/
-	return (l-k);
 	if((l-k) < 0) return (64+l-k);
+	return (l-k);
 }
 
-int RingManagerCheck(RingManager * ringmanager, int k){	/*Quick un-modularized function, can be substituted by more general function*/
-	//int id = ringmanager->id;
-  //int predid = (ringmanager->predi ? ringmanager->predi->id : 0);  /*Check if predi exists or not!!*/
+int RingManagerCheck(RingManager * ringmanager, int k){
+	int id = ringmanager->id;
+	if (ringmanager->predi == NULL) return -1;
 	
-	//if(d(k, id) < d(k, predid)) return 1;
+	int predid = ringmanager->predi->id;
+	  
+	if(d(k, id) < d(k, predid)) return 1;
 	return 0;
 }
 

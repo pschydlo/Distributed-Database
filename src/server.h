@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "UDPManager.h"
 #include "TCPManager.h"
 #include "UIManager.h"

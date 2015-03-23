@@ -148,12 +148,13 @@ int ServerProcRingReq(Server * server, Request * request){
     
     int originID = atoi(RequestGetArg(request, 1));
     int searchID = atoi(RequestGetArg(request, 2));
+    char * responsibleIP = RequestGetArg(request, 3);
+    int responsiblePort = atoi(RequestGetArg(request, 4));
     
     if(originID == RingManagerId(server->ringmanager)){
-      printf("Hey, I'm back!");
-      fflush(stdout);
+      //Handle response 
     }else{
-      RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
+      RingManagerRsp(server->ringmanager, originID, searchID, 2, responsibleIP, responsiblePort);
     }
     
     
@@ -183,9 +184,8 @@ int ServerProcRingReq(Server * server, Request * request){
     int originID = atoi(RequestGetArg(request, 1));
     int searchID = atoi(RequestGetArg(request, 2));
     
-    if(originID == RingManagerId(server->ringmanager)){
-      printf("Hey, I'm back!");
-      fflush(stdout);
+    if(RingManagerCheck(server->ringmanager, searchID)){
+      RingManagerRsp(server->ringmanager, originID, searchID, RingManagerId(server->ringmanager), "127.0.0.1", server->TCPport);
     }else{
       RingManagerQuery(server->ringmanager, originID, searchID );
     }
@@ -298,19 +298,24 @@ int ServerProcUIReq(Server * server, Request * request){
 		/*Reset all succi, predi, etc*/
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
-  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, 1, "127.0.0.1", 9000);
+  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), "127.0.0.1", server->TCPport);
 	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
 		if(count < 2) return 0;
     
 		int search = atoi(RequestGetArg(request, 1));
 		int id     = RingManagerId(server->ringmanager);
 		
-		if(RingManagerCheck(server->ringmanager, search)) printf("%i, ip, port", id); /*Add variables for ip and port eventually*/
+		if(RingManagerCheck(server->ringmanager, search)) printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
 		else RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
 	}
 	else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
 	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
 	else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
+	else if(strcmp(RequestGetArg(request,0),"check") == 0){
+	  if(RingManagerCheck(server->ringmanager, atoi(RequestGetArg(request, 1)))) printf("It's ours");
+	  else printf("No luck here");
+	  fflush(stdout);
+	} 
 	else printf("Comando não reconhecido\n");
 	
 	return 1;
