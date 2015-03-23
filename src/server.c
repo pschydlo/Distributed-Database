@@ -92,6 +92,7 @@ int ServerStart(Server * server){
 		UIManagerArm(&rfds,&maxfd);
 		RingManagerArm(server->ringmanager,&rfds,&maxfd);
 		TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
+		UDPManagerArm(server->udpmanager, &rfds, &maxfd);
 		
 		counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
 		
@@ -132,6 +133,16 @@ int ServerStop(Server * server){
   /*free(request);*/
 	
   return 0;
+}
+
+int ServerProcUDPReq(Server * server, Request * request){
+	
+	if(RequestGetArgCount(request) <= 0) return 0;
+	if(RequestGetArgCount(request) == 1){
+	printf("%s\n", RequestGetArg(request, 0));
+	fflush(stdout);
+	}
+	return 0;
 }
 
 int ServerProcRingReq(Server * server, Request * request){
@@ -204,18 +215,7 @@ int ServerProcRingReq(Server * server, Request * request){
   }
   
 	return 1;
-}
-
-int ServerProcUDPReq(Server * server, Request * request){
-	
-	if(RequestGetArgCount(request) <= 0) return 0;
-	if(RequestGetArgCount(request) == 1){
-	printf("%s\n", RequestGetArg(request, 0));
-	fflush(stdout);
-	}
-	return 0;
-}
-	
+}	
 
 int ServerProcTCPReq(Server * server, Request * request){
 
@@ -281,25 +281,24 @@ int ServerProcUIReq(Server * server, Request * request){
 	command = RequestGetArg(request,0);
 	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
-		if(count != 6 && count != 3) return 0;
 		if(count == 3){
 			/*Send UDP BQRY x*/
 			/*if(BQRY == EMPTY)*/
-			UDPManagerJoin(server->udpmanager, 9);
+			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)));
 			/*else send(ID)*/
 			/*receive "SUCC" from succi*/
-		}
-    
-    int ring = atoi(RequestGetArg(request, 1));
-    int id   = atoi(RequestGetArg(request, 2));
-    int succiID    = atoi(RequestGetArg(request, 3));
-    char * succiIP = RequestGetArg(request, 4); 
-    int succiPort = atoi(RequestGetArg(request, 5)); 
-                    
-    
-		RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);      
-	}
-	else if(strcmp(command,"leave") == 0){
+			return 0;
+		}else if(count == 6){
+			
+			int ring = atoi(RequestGetArg(request, 1));
+			int id   = atoi(RequestGetArg(request, 2));
+			int succiID    = atoi(RequestGetArg(request, 3));
+			char * succiIP = RequestGetArg(request, 4); 
+			int succiPort = atoi(RequestGetArg(request, 5)); 
+
+			RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+		}	
+	}else if(strcmp(command,"leave") == 0){
 		/* To do: Check if only one in ring, if so,
 		 * tell boot server to remove node. Else:
 		 * REG x succi to boot server and*/
