@@ -5,6 +5,7 @@
 #include "Request.h"
 #include "TCPSocket.h"
 #include <unistd.h>
+#include <fcntl.h>
 
 typedef struct TCPManager TCPManager;
 
