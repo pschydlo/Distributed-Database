@@ -149,16 +149,24 @@ int ServerProcRingReq(Server * server, Request * request){
     int originID = atoi(RequestGetArg(request, 1));
     int searchID = atoi(RequestGetArg(request, 2));
     
+    if(originID == RingManagerId(server->ringmanager)){
+      printf("Hey, I'm back!");
+      fflush(stdout);
+    }else{
+      RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
+    }
+    
+    
     //if(originID ==  RingManagerId(server->ringmanager)){
       //printf("This one is ours!");
       //fflush(stdout);
     //}else{
-      RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
+      //RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
     //}        
   }
   
   if(strcmp(RequestGetArg(request,0),"CON") == 0){
-    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
+    if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
     
     int id   = RingManagerId(server->ringmanager);
     int succiID    = atoi(RequestGetArg(request, 1));
@@ -167,6 +175,27 @@ int ServerProcRingReq(Server * server, Request * request){
                     
     
 		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
+  }
+  
+  if(strcmp(RequestGetArg(request,0),"QRY") == 0) {
+    if(RequestGetArgCount(request) != 3) return 0; 
+    
+    int originID = atoi(RequestGetArg(request, 1));
+    int searchID = atoi(RequestGetArg(request, 2));
+    
+    if(originID == RingManagerId(server->ringmanager)){
+      printf("Hey, I'm back!");
+      fflush(stdout);
+    }else{
+      RingManagerQuery(server->ringmanager, originID, searchID );
+    }
+    
+    
+    //RingManagerCheck(server->ringmanager, searchID)){
+      //printf("This one is ours!");
+      //fflush(stdout);
+    //}else{
+    //} 
   }
   
 	return 1;
@@ -269,7 +298,7 @@ int ServerProcUIReq(Server * server, Request * request){
 		/*Reset all succi, predi, etc*/
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
-  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 1, 1, 1, "127.0.0.1", 9000);
+  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, 1, "127.0.0.1", 9000);
 	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
 		if(count < 2) return 0;
     
