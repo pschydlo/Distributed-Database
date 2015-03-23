@@ -70,18 +70,17 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 			close(newfd);
 		} 
 	}
-	
-	int fopts = 0;
 
 	for(i = 0; i < MAX_CON; i++){
 		if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
 		
-		if (fcntl(tcpmanager->sockets[i], F_GETFD) != -1) {
-			printf("Closed this socket!");
-			fflush(stdout);
-			
+		n = send(tcpmanager->sockets[i], " ", 1, MSG_NOSIGNAL);
+		if (n == -1)
+		{
 			close(tcpmanager->sockets[i]);
 			tcpmanager->sockets[i] = -1;
+		
+			continue;
 		}
 		
 		if(reqcount == 1) continue;

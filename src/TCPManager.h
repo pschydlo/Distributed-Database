@@ -6,6 +6,7 @@
 #include "TCPSocket.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 typedef struct TCPManager TCPManager;
 
