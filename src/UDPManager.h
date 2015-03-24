@@ -9,11 +9,15 @@
 
 typedef struct UDPManager UDPManager;
 
+int UDPManagerMsg(UDPManager * udpmanager, char * buffer);
+
+int UDPManagerJoin(UDPManager * udpmanager, int ring, int id);
+
 int UDPManagerSetIP(UDPManager * udpmanager, char * bootIP);
 
 int UDPManagerSetPort(UDPManager * udpmanager, int bootPort);
 
-int UDPManagerJoin(UDPManager * udpmanager, int ring, int id);
+int UDPManagerReg(UDPManager * udpmanager, char * ip, int port);
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
 

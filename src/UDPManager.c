@@ -1,14 +1,27 @@
 #include "UDPManager.h"
 
 struct UDPManager{
-	char * ip;
+	char ip[16];
+	int ring, id;
 	int port, fd;
 	struct sockaddr_in * addr;
 	
 };
 
+int UDPManagerMsg(UDPManager * udpmanager, char * buffer){
+	return sendto(udpmanager->fd, buffer, strlen(buffer), 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr));
+}
+
+int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){
+	char buffer[128];
+	udpmanager->ring = ring;
+	udpmanager->id   = id;
+	sprintf(buffer, "BQRY %d", ring);
+	return UDPManagerMsg(udpmanager, buffer);
+}
+
 int UDPManagerSetIP(UDPManager * udpmanager, char * bootIP){
-	udpmanager->ip = bootIP;		/*Not sure if this is correct way*/
+	strcpy(udpmanager->ip, bootIP);		/*Not sure if this is correct way*/
 	return 0;
 }
 
@@ -17,12 +30,10 @@ int UDPManagerSetPort(UDPManager * udpmanager, int bootPort){
 	return 0;
 }
 
-int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){
-	/*strcat stuff here to join REG*/
-	char * ip = "1.2.3.4";
+int UDPManagerReg(UDPManager * udpmanager, char * ip, int port){
 	char buffer[128];
-	sprintf(buffer, "REG %d %d %s %i", ring, id, ip, udpmanager->port);
-	if(sendto(udpmanager->fd, buffer, strlen(buffer), 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr)) == -1) exit(1);
+	sprintf(buffer, "REG %d %d %s %d", udpmanager->ring, udpmanager->id, ip, port);
+	if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
 	return 0;
 }
 
@@ -48,7 +59,7 @@ int UDPManagerCreate(UDPManager * udpmanager){
 UDPManager * UDPManagerInit(){
 	UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
 	udpmanager->addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));	/*if you really want to, we can typedef this as sockaddr_in*/
-	udpmanager->ip   = "193.136.138.142";	/*ip de tejo.tecnico.ulisboa.pt*/
+	strcpy(udpmanager->ip, "193.136.138.142");	/*ip de tejo.tecnico.ulisboa.pt*/
 	udpmanager->port = 58000;
 	return udpmanager;
 }

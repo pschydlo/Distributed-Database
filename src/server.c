@@ -64,6 +64,7 @@ Server * ServerInit(int argc, char ** argv, char * ip){
 	
 	server->isBoot		= 0;
 	server->shutdown	= 0;
+	server->TCPport 	= 9000;
 	server->udpmanager	= UDPManagerInit();
 	server->tcpmanager	= TCPManagerInit();
 	
@@ -146,10 +147,16 @@ int ServerStop(Server * server){
 int ServerProcUDPReq(Server * server, Request * request){
 	
 	if(RequestGetArgCount(request) <= 0) return 0;
-	if(RequestGetArgCount(request) == 1){
-	printf("%s\n", RequestGetArg(request, 0));
-	fflush(stdout);
+	if(strcmp(RequestGetArg(request, 0), "NOK") == 0) printf("Problem with UDP\n");
+	if(strcmp(RequestGetArg(request, 0), "EMPTY") == 0) UDPManagerReg(server->udpmanager, server->ip, server->TCPport);
+	if(strcmp(RequestGetArg(request, 0), "BRSP") == 0); /*TCP connect, send ID i*/
+	
+	int i;
+	for(i = 0; i<RequestGetArgCount(request); i++){
+		printf("%s,", RequestGetArg(request, i));
+		fflush(stdout);
 	}
+	printf("\n");
 	return 0;
 }
 
@@ -269,6 +276,7 @@ int ServerProcTCPReq(Server * server, Request * request){
 int ServerProcUIReq(Server * server, Request * request){
 	int i = 0;
 	char * command;
+	char buffer[100];
 	
 	if(RequestGetArgCount(request) <= 0) return 0;
 	
@@ -292,8 +300,9 @@ int ServerProcUIReq(Server * server, Request * request){
 		if(count == 3){
 			/*Send UDP BQRY x*/
 			/*if(BQRY == EMPTY)*/
-			RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));
+			/*RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));*/
 			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
+			/*UDPManagerReg(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));*/
 			/*else send(ID)*/
 			/*receive "SUCC" from succi*/
 			return 0;
@@ -306,6 +315,7 @@ int ServerProcUIReq(Server * server, Request * request){
 			int succiPort = atoi(RequestGetArg(request, 5)); 
 
 			RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+			return 0;
 		}	
 	}else if(strcmp(command,"leave") == 0){
 		/* To do: Check if only one in ring, if so,
@@ -320,6 +330,7 @@ int ServerProcUIReq(Server * server, Request * request){
 		
 		
 		/*Reset all succi, predi, etc*/
+		return 0;
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
   else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
@@ -331,14 +342,19 @@ int ServerProcUIReq(Server * server, Request * request){
 		
 		if(RingManagerCheck(server->ringmanager, search)) printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
 		else RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
-	}
-	else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");/*Debugging boops*/
+		return 0;
+	}else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");/*Debugging boops*/
 	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
-	else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
+	else if(strcmp(RequestGetArg(request,0),"send") == 0){
+		fgets(buffer, 100, stdin);
+		RingManagerMsg(server->ringmanager, 1, buffer);
+		return 0;
+	}else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
 	else if(strcmp(RequestGetArg(request,0),"check") == 0){
 	  if(RingManagerCheck(server->ringmanager, atoi(RequestGetArg(request, 1)))) printf("It's ours");
 	  else printf("No luck here");
 	  fflush(stdout);
+	  return 0;
 	} 
 	else printf("Comando não reconhecido\n");
 	
