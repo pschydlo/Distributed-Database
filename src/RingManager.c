@@ -5,6 +5,7 @@
 
 struct Peer{
 	int id, fd;
+  char buffer[128];
 	char * ip;
 };
 
@@ -180,30 +181,27 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 }
 
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
-	
-  char buffer[128];
-  
 	int n = 0;
 	
 	if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
-		if((n=read(ringmanager->predi->fd,buffer,128))!=0){
+		if((n=read(ringmanager->predi->fd,ringmanager->predi->buffer,128))!=0){
 			if(n==-1) exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			buffer[n] = '\0';
+			ringmanager->predi->buffer[n] = '\0';
       
-			RequestParseString(request, buffer);
+			RequestParseString(request, ringmanager->predi->buffer);
 			
 			return 1;
 		}
 	}
 	
 	if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){
-		if((n=read(ringmanager->succi->fd,buffer,128))!=0){
+		if((n=read(ringmanager->succi->fd,ringmanager->succi->buffer,128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			buffer[n] = '\0';
+			ringmanager->succi->buffer[n] = '\0';
       
       /* Check if request is completely in buffer! (could happen that he only receives half \n */
 			
-      RequestParseString(request, buffer);
+      RequestParseString(request, ringmanager->succi->buffer);
 			
       return 1;
 		}
