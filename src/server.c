@@ -106,24 +106,25 @@ int ServerStart(Server * server){
 		if(counter<0) exit(1);
 		if(counter == 0) continue;
 
-    n = 0;
-    RequestReset(request);
-    n = RingManagerReq(server->ringmanager, &rfds, request);
-    if(n) ServerProcRingReq(server, request);
-    
-      
-		RequestReset(request);
-		n = TCPManagerReq(server->tcpmanager, &rfds, request);
-		if(n) ServerProcTCPReq(server, request);
-		
-		RequestReset(request);
-		n = UDPManagerReq(server->udpmanager, &rfds, request);
-		if(n) ServerProcUDPReq(server, request);
-		
-		RequestReset(request);
-		n = UIManagerReq(&rfds, request);
-		if(n) ServerProcUIReq(server, request);
+		do{
+			RequestReset(request);
+			n = RingManagerReq(server->ringmanager, &rfds, request);
+			if(n) ServerProcRingReq(server, request);
 
+			RequestReset(request);
+			n = TCPManagerReq(server->tcpmanager, &rfds, request);
+			if(n) ServerProcTCPReq(server, request);
+
+			RequestReset(request);
+			n = UDPManagerReq(server->udpmanager, &rfds, request);
+			if(n) ServerProcUDPReq(server, request);
+
+			RequestReset(request);
+			n = UIManagerReq(&rfds, request);
+			if(n) ServerProcUIReq(server, request);
+			
+			n=0;
+		} while(n != 0);
 	}
   
   RequestDestroy(request);

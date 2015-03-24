@@ -57,6 +57,7 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 	
 	if(FD_ISSET(tcpmanager->pfd,rfds)){
 		int newfd = TCPSocketAccept(tcpmanager->pfd);
+		FD_CLR(tcpmanager->pfd, rfds);
 		
 		for(i=0; i<MAX_CON; i++){
 			if(tcpmanager->sockets[i] != -1) continue;
@@ -68,11 +69,12 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 		if(i == MAX_CON){
 			write(newfd, "Busy try again later.\n", 22);
 			close(newfd);
-		} 
+		}
 	}
 
 	for(i = 0; i < MAX_CON; i++){
 		if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
+		FD_CLR(tcpmanager->sockets[i], rfds);
 		
 		n = send(tcpmanager->sockets[i], " ", 1, MSG_NOSIGNAL);
 		if (n == -1)

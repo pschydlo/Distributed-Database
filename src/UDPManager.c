@@ -75,6 +75,7 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
 	char buffer[128];
 	
 	if(!FD_ISSET(udpmanager->fd, rfds)) return 0;
+	FD_CLR(udpmanager->fd, rfds);
 	
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 
