@@ -56,8 +56,9 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 	char buffer[128];
 	
 	if(FD_ISSET(tcpmanager->pfd,rfds)){
-		int newfd = TCPSocketAccept(tcpmanager->pfd);
 		FD_CLR(tcpmanager->pfd, rfds);
+		
+		int newfd = TCPSocketAccept(tcpmanager->pfd);
 		
 		for(i=0; i<MAX_CON; i++){
 			if(tcpmanager->sockets[i] != -1) continue;
@@ -94,10 +95,9 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 			RequestParseString(request, buffer);
 			RequestAddFD(request, tcpmanager->sockets[i]);
 				
-			reqcount++;
+			reqcount = 1;
 		}
 	}
-	
 
 	return reqcount;
 }
