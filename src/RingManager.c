@@ -187,7 +187,19 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int n = 0;
   int reqlength = 0;
     
-  if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
+  if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
+  	strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
+  	ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
+  	return 1;
+  }
+	
+	if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
+  	strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
+  	ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+  	return 1;
+  }
+	
+	if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
 		FD_CLR(ringmanager->predi->fd, rfds);
 		
 		if((n=read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128))!=0){
@@ -197,7 +209,11 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
       
       /* Check if request is completely in buffer! (could happen that he only receives half \n */
       reqlength = RequestParseString(request, ringmanager->predi->buffer);
-      if(reqlength == 0) return 0;
+      
+			if(reqlength == 0){
+				ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+				return 0;
+			}
         
       strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
       ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
@@ -215,8 +231,11 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
       
       /* Check if request is completely in buffer! (could happen that he only receives half \n */
       reqlength = RequestParseString(request, ringmanager->succi->buffer);
-      if(reqlength == 0) return 0;
-        
+      if(reqlength == 0){
+				ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
+				return 0;
+			}
+			
       strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
       ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
       /*
@@ -226,18 +245,6 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 			return 1;
 		}
 	}
-	
-	if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
-  	strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
-  	ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
-  	return 1;
-  }
-	
-	if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
-  	strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
-  	ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
-  	return 1;
-  }
 	
 	return 0;
 }

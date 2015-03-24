@@ -354,6 +354,8 @@ int ServerProcUIReq(Server * server, Request * request){
 		return 0;
 	}else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");/*Debugging boops*/
 	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
+	else if(strcmp(RequestGetArg(request,0),"part1") == 0) RingManagerMsg(server->ringmanager, 1, "Bo");
+	else if(strcmp(RequestGetArg(request,0),"part2") == 0) RingManagerMsg(server->ringmanager, 1, "op\n");
 	else if(strcmp(RequestGetArg(request,0),"send") == 0){
 		fgets(buffer, 100, stdin);
 		RingManagerMsg(server->ringmanager, 1, buffer);
