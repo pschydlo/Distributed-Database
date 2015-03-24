@@ -7,6 +7,7 @@ struct Server{
 	UDPManager  * udpmanager;
 	TCPManager  * tcpmanager;
 	RingManager * ringmanager;
+	char ip[16];
 	int TCPport, shutdown;
 };
 
@@ -58,7 +59,7 @@ int ServerProcArg(Server * server, int argc, char ** argv){
 	return 0;	
 }
 
-Server * ServerInit(int argc, char ** argv){
+Server * ServerInit(int argc, char ** argv, char * ip){
 	Server * server=(Server*)malloc(sizeof(Server));
 	
 	server->isBoot		= 0;
@@ -68,7 +69,11 @@ Server * ServerInit(int argc, char ** argv){
 	
 	ServerProcArg(server, argc, argv);
   
-  server->ringmanager	= RingManagerInit(server->TCPport);
+	server->ringmanager	= RingManagerInit(server->ip, server->TCPport);
+	strcpy(server->ip, ip);
+	
+	printf("%s\n", ip);
+	fflush(stdout);
 	
 	return server;
 }
@@ -201,7 +206,7 @@ int ServerProcRingReq(Server * server, Request * request){
     int searchID = atoi(RequestGetArg(request, 2));
     
     if(RingManagerCheck(server->ringmanager, searchID)){
-      RingManagerRsp(server->ringmanager, originID, searchID, RingManagerId(server->ringmanager), "127.0.0.1", server->TCPport);
+      RingManagerRsp(server->ringmanager, originID, searchID, RingManagerId(server->ringmanager), server->ip, server->TCPport);
     }else{
       RingManagerQuery(server->ringmanager, originID, searchID );
     }
@@ -235,9 +240,9 @@ int ServerProcTCPReq(Server * server, Request * request){
   if(strcmp(RequestGetArg(request,0),"NEW") == 0){
     //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
     
-    int originPort  = atoi(RequestGetArg(request, 3));
-    char * originIP = RequestGetArg(request, 2);
     int originID    = atoi(RequestGetArg(request, 1));
+    char * originIP = RequestGetArg(request, 2);
+    int originPort  = atoi(RequestGetArg(request, 3));
     
     RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
     TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
@@ -314,7 +319,7 @@ int ServerProcUIReq(Server * server, Request * request){
 		/*Reset all succi, predi, etc*/
 	}
 	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
-  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), "127.0.0.1", server->TCPport);
+  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
 	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
 		if(count < 2) return 0;
     
@@ -335,6 +340,10 @@ int ServerProcUIReq(Server * server, Request * request){
 	else printf("Comando não reconhecido\n");
 	
 	return 1;
+}
+
+void ServerSetIP(Server * server, char* ip){
+	strcpy(server->ip,ip);
 }
 
 unsigned long hash(unsigned char *str) /* djb2 algorithm */

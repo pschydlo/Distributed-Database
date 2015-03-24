@@ -11,7 +11,7 @@
 
 typedef struct Server Server;
 
-Server * ServerInit(int argc, char ** argv);
+Server * ServerInit(int argc, char ** argv, char * ip);
 int ServerProcArg(Server * server, int argc, char ** argv);
 int ServerStart(Server * server);
 int ServerStop(Server * server);

@@ -14,6 +14,7 @@ struct RingManager{
 	int ring;
 	int id;
   int TCPport;
+  char ip[16];
 };
 
 int RingManagerId(RingManager * ringmanager){
@@ -104,12 +105,12 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
   return 1;
 }
 
-int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * ip, int port){
+int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 	
 	int n, fd = TCPSocketCreate();
 
-	if((n = TCPSocketConnect(fd, ip, port)) < 0) {
-    printf("IP: %s, Port: %d", ip, port);
+	if((n = TCPSocketConnect(fd, succiIP, succiPort)) < 0) {
+    printf("IP: %s, Port: %d", succiIP, succiPort);
 		printf("Could not connect to predi.");
 		exit(1);
 	} /*ERROR! checking to be done*/
@@ -118,7 +119,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	ringmanager->ring = ring;
 	
   char msg[50];
-  sprintf(msg, "NEW %d %s %d\n", id, "127.0.0.1", ringmanager->TCPport); 
+  sprintf(msg, "NEW %d %s %d\n", id, ringmanager->ip, ringmanager->TCPport);
   
   write(fd, msg, strlen(msg));
   
@@ -163,7 +164,7 @@ int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes)
   return 1;
 }
 	
-RingManager * RingManagerInit(int TCPport){
+RingManager * RingManagerInit(char * ip, int TCPport){
 	
 	RingManager * ringmanager;
 
@@ -172,6 +173,7 @@ RingManager * RingManagerInit(int TCPport){
 	ringmanager->predi = NULL;
 	ringmanager->id    = 0;		/*INITIALIZATION VALUES PLZ CHANGE*/
 	ringmanager->ring  = 0;		/*TEST ONLY*/
+	strcpy(ringmanager->ip, ip);
   ringmanager->TCPport = TCPport;
 	
 	return ringmanager;

@@ -28,7 +28,7 @@ int RingManagerArm(RingManager * ringmanager, fd_set * rfds, int * maxfd);
 void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID );
 void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port);
 
-RingManager * RingManagerInit();
+RingManager * RingManagerInit(char * ip, int TCPport);
 
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request);
 

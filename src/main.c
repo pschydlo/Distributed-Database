@@ -15,7 +15,8 @@ int main(int argc, char **argv){
   
   printf("Our IP is now: %s\n\n", ip);
   
-	server = ServerInit(argc, argv); /*Maybe process args in main, but looking good for now*/
+	server = ServerInit(argc, argv, ip); /*Maybe process args in main, but looking good for now*/
+	
 	ServerStart(server);
 	ServerStop(server);
 	
