@@ -330,8 +330,8 @@ int ServerProcUIReq(Server * server, Request * request){
 		if(RingManagerCheck(server->ringmanager, search)) printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
 		else RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
 	}
-	else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\n");/*Debugging boops*/
-	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\n");
+	else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");/*Debugging boops*/
+	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
 	else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
 	else if(strcmp(RequestGetArg(request,0),"check") == 0){
 	  if(RingManagerCheck(server->ringmanager, atoi(RequestGetArg(request, 1)))) printf("It's ours");

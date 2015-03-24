@@ -6,6 +6,7 @@
 struct Peer{
 	int id, fd;
   char buffer[128];
+  int bufferhead;
 	char * ip;
 };
 
@@ -85,6 +86,7 @@ int RingManagerStatus(RingManager * ringmanager){
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port){
 	if(ringmanager->predi == NULL){
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
+    ringmanager->predi->bufferhead = 0;
 	}else{
     char msg[50];
     sprintf(msg, "CON %d %s %d\n", id, ip, port); 
@@ -127,6 +129,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
 	ringmanager->succi->fd = fd;
   ringmanager->succi->id = succiID;
+  ringmanager->succi->bufferhead = 0;
 	
 	return n;
 }
@@ -172,8 +175,8 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 	ringmanager = (RingManager*)malloc(sizeof(RingManager));
 	ringmanager->succi = NULL;
 	ringmanager->predi = NULL;
-	ringmanager->id    = 0;		/*INITIALIZATION VALUES PLZ CHANGE*/
-	ringmanager->ring  = 0;		/*TEST ONLY*/
+	ringmanager->id    = -1;		
+	ringmanager->ring  = -1;		
 	strcpy(ringmanager->ip, ip);
   ringmanager->TCPport = TCPport;
 	
@@ -182,27 +185,44 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int n = 0;
+  int reqlength = 0;
 	
 	if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
-		if((n=read(ringmanager->predi->fd,ringmanager->predi->buffer,128))!=0){
-			if(n==-1) exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			ringmanager->predi->buffer[n] = '\0';
-      
-			RequestParseString(request, ringmanager->predi->buffer);
-			
-			return 1;
-		}
-	}
-	
-	if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){
-		if((n=read(ringmanager->succi->fd,ringmanager->succi->buffer,128))!=0){
+		if((n=read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128))!=0){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			ringmanager->succi->buffer[n] = '\0';
+			ringmanager->predi->buffer[ringmanager->predi->bufferhead + n] = '\0';
       
       /* Check if request is completely in buffer! (could happen that he only receives half \n */
 			
-      RequestParseString(request, ringmanager->succi->buffer);
+      printf("buffer: %s", ringmanager->predi->buffer);
+      reqlength = RequestParseString(request, ringmanager->predi->buffer);
+      
+      if(reqlength == 0) return 0;
+        
+      strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
+      ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+      
+      printf("buffer2: %s", ringmanager->predi->buffer);
+      return 1;
+    }
+	}
+	
+	if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){
+		if((n=read(ringmanager->succi->fd, ringmanager->succi->buffer + ringmanager->succi->bufferhead, 128))!=0){
+			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
+			ringmanager->succi->buffer[ringmanager->succi->bufferhead + n] = '\0';
+      
+      /* Check if request is completely in buffer! (could happen that he only receives half \n */
 			
+      printf("buffer: %s", ringmanager->succi->buffer);
+      reqlength = RequestParseString(request, ringmanager->succi->buffer);
+      
+      if(reqlength == 0) return 0;
+        
+      strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
+      ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
+      
+      printf("buffer2: %s", ringmanager->succi->buffer);
       return 1;
 		}
 	}

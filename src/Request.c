@@ -16,10 +16,10 @@ int RequestParseString(Request * request, char * buffer){
 		RequestPushArg(request, buffer + start, n - start);
 		start = n + 1;
 	 
-    if(buffer[n] == '\n') return 1;
+    if(buffer[n] == '\n') return n+1;
   }
 	
-	return -1;
+	return 0;
 }
 
 void RequestAddFD(Request * request, int fd){
