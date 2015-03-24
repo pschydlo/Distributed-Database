@@ -69,8 +69,9 @@ Server * ServerInit(int argc, char ** argv, char * ip){
 	
 	ServerProcArg(server, argc, argv);
   
-	server->ringmanager	= RingManagerInit(server->ip, server->TCPport);
 	strcpy(server->ip, ip);
+	server->ringmanager	= RingManagerInit(server->ip, server->TCPport);
+	
 	
 	printf("%s\n", ip);
 	fflush(stdout);
