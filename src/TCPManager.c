@@ -110,3 +110,7 @@ void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
 		break;
 	}
 }
+
+int TCPManagerRespond(Request * request, int fd){
+	
+}
