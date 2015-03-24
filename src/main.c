@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 
 
 void getIPAddr(char * ip){
-  struct ifaddrs *addrs,*tmp, *ifa;
+  struct ifaddrs *addrs, *ifa;
   int n, i=0;
   char ips[4][17];
   

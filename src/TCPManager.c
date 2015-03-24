@@ -112,5 +112,5 @@ void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
 }
 
 int TCPManagerRespond(Request * request, int fd){
-	
+	return 1;
 }
