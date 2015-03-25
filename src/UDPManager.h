@@ -9,6 +9,10 @@
 
 typedef struct UDPManager UDPManager;
 
+int UDPManagerID(UDPManager * udpmanager);
+
+int UDPManagerRing(UDPManager * udpmanager);
+
 int UDPManagerMsg(UDPManager * udpmanager, char * buffer);
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring, int id);

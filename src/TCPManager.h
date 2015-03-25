@@ -10,6 +10,8 @@
 
 typedef struct TCPManager TCPManager;
 
+int TCPManagerIDfd(TCPManager * tcpmanager);
+
 TCPManager * TCPManagerInit();
 int TCPManagerStart(TCPManager * tcpmanager, int TCPport);
 

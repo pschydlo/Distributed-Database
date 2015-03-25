@@ -8,6 +8,14 @@ struct UDPManager{
 	
 };
 
+int UDPManagerID(UDPManager * udpmanager){
+	return udpmanager->id;
+}
+
+int UDPManagerRing(UDPManager * udpmanager){
+	return udpmanager->ring;
+}
+
 int UDPManagerMsg(UDPManager * udpmanager, char * buffer){
 	return sendto(udpmanager->fd, buffer, strlen(buffer), 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr));
 }

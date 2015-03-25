@@ -3,10 +3,14 @@
 #define MAX_CON 2
 
 struct TCPManager{
-	int pfd;
+	int pfd, idfd;
 	int sockets[MAX_CON];
 	/*Buffer *buffer;*/
 };
+
+int TCPManagerIDfd(TCPManager * tcpmanager){
+    return tcpmanager->idfd;
+}
 
 TCPManager * TCPManagerInit(){
 	int i = 0;
@@ -34,6 +38,7 @@ int TCPManagerStart(TCPManager * tcpmanager, int TCPport){
 int TCPManagerArm( TCPManager * tcpmanager, fd_set * rfds, int * maxfd ){
 
 	FD_SET(tcpmanager->pfd, rfds);
+        if(tcpmanager->idfd != -1) FD_SET(tcpmanager->idfd, rfds);      /*temp id socket for outgoing ID asking*/
 	if(tcpmanager->pfd > *maxfd) *maxfd = tcpmanager->pfd;
 	
 	int i = 0;
@@ -72,6 +77,21 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 			close(newfd);
 		}
 	}
+        
+        if(FD_ISSET(tcpmanager->idfd,rfds)){
+            FD_CLR(tcpmanager->idfd, rfds);
+            if((n=read(tcpmanager->idfd,buffer,128))!=0){
+                if(n==-1)exit(1);
+                buffer[n]='\0';
+                
+                RequestParseString(request, buffer);
+                RequestAddFD(request, tcpmanager->idfd);
+                
+                reqcount = 1;
+            }
+        }
+                
+                        
 
 	for(i = 0; i < MAX_CON; i++){
 		if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
