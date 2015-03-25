@@ -335,12 +335,31 @@ int ServerProcTCPReq(Server * server, Request * request){
 				return 0;
 			}
 			
+			close(TCPManagerIDfd(server->tcpmanager));
+			TCPManagerIDfd(server->tcpmanager);
+			
 			RingManagerConnect(server->ringmanager,
 							UDPManagerRing(server->udpmanager), 
 							UDPManagerID(server->udpmanager), 
 							destID, destIP, destPort);
 			break;
 		}
+		case(TCP_ID):
+		{
+			if(RequestGetArgCount(request) != 2) break;
+			int search = atoi(RequestGetArg(request, 1));
+			int id = RingManagerId(server->ringmanager);
+			if(RingManagerCheck(server->ringmanager, search)){
+				char msg[50];
+				sprintf(msg, "SUCC %d %s %d\n", UDPManagerID(server->udpmanager), server->ip, server->TCPport);
+				write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
+			}
+			else{
+				RingManagerQuery(server->ringmanager, id, search);
+				
+			}
+		}
+		
 		default: 
 			break;
 	}

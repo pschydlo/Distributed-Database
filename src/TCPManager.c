@@ -4,6 +4,7 @@
 
 struct TCPManager{
 	int pfd, idfd;
+	int searchid;
 	int sockets[MAX_CON];
 	/*Buffer *buffer;*/
 };
@@ -134,5 +135,7 @@ void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
 }
 
 int TCPManagerRespond(Request * request, int fd){
+
+	
 	return 1;
 }
