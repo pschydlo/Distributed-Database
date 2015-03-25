@@ -3,7 +3,7 @@
 struct UDPManager{
 	char ip[16];
 	int ring, id;
-	int port, fd;
+	int port, fd, tcpfd;
 	struct sockaddr_in * addr;
 	
 };
@@ -66,7 +66,11 @@ int UDPManagerCreate(UDPManager * udpmanager){
 
 UDPManager * UDPManagerInit(){
 	UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
+	memset(udpmanager, 0, sizeof(UDPManager));
+	
 	udpmanager->addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));	/*if you really want to, we can typedef this as sockaddr_in*/
+	memset(udpmanager->addr, 0, sizeof(struct sockaddr_in));
+	
 	strcpy(udpmanager->ip, "193.136.138.142");	/*ip de tejo.tecnico.ulisboa.pt*/
 	udpmanager->port = 58000;
 	return udpmanager;
@@ -74,6 +78,8 @@ UDPManager * UDPManagerInit(){
 
 void UDPManagerStop ( UDPManager * udpmanager){
   free(udpmanager->addr);
+	close(udpmanager->fd);
+	free(udpmanager);
 }
 
 int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){

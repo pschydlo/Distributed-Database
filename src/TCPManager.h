@@ -18,3 +18,4 @@ int TCPManagerStart(TCPManager * tcpmanager, int TCPport);
 int TCPManagerArm(TCPManager * tcpmanager, fd_set * rfds, int * maxfd);
 int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request);
 void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd);
+void TCPManagerStop ( TCPManager * tcpmanager);

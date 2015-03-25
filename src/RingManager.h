@@ -4,6 +4,7 @@
 #include "TCPSocket.h"
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 typedef struct RingManager RingManager;
 
@@ -34,3 +35,4 @@ RingManager * RingManagerInit(char * ip, int TCPport);
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request);
 
 int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes);
+void RingManagerStop ( RingManager * ringmanager);

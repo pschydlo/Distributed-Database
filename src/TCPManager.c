@@ -16,6 +16,7 @@ int TCPManagerIDfd(TCPManager * tcpmanager){
 TCPManager * TCPManagerInit(){
 	int i = 0;
 	TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));
+	memset(tcpmanager, 0, sizeof(TCPManager));
 	
 	for(i=0; i < MAX_CON; i++){
 		tcpmanager->sockets[i] = -1;
@@ -138,4 +139,18 @@ int TCPManagerRespond(Request * request, int fd){
 
 	
 	return 1;
+}
+
+void TCPManagerStop ( TCPManager * tcpmanager){
+	int i;
+	
+	for(i=0; i<MAX_CON; i++){
+		if(tcpmanager->sockets[i] == -1) continue;
+		
+		write(tcpmanager->sockets[i], "Server shutting down.\n", 23);
+		close(tcpmanager->sockets[i]);
+	}
+	
+	close(tcpmanager->pfd);
+	free(tcpmanager);
 }

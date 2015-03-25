@@ -39,7 +39,10 @@ int RequestGetArgCount(Request * request){
 }
 
 Request * RequestCreate(){
-	return (Request*)malloc(sizeof(Request));
+	Request * request = (Request*)malloc(sizeof(Request));
+	memset(request, 0, sizeof(Request));
+	
+	return request;
 }
 
 void RequestDestroy(Request * request){
@@ -47,6 +50,8 @@ void RequestDestroy(Request * request){
 }
 
 void RequestReset(Request * request){
+	memset(request, 0, sizeof(Request));
+	
 	request->argc = 0;
   request->fd   = -1;
 }

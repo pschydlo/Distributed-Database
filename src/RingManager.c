@@ -86,6 +86,8 @@ int RingManagerStatus(RingManager * ringmanager){
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port){
 	if(ringmanager->predi == NULL){
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
+		memset(ringmanager->predi, 0, sizeof(Peer));
+		
 		ringmanager->predi->bufferhead = 0;
 	}else{
 		char msg[50];
@@ -112,9 +114,6 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 	
 	int n, fd = TCPSocketCreate();
-
-	printf("Initiated connect: %d, %d\n", id, succiID);
-	fflush(stdout);
 	
 	if(succiID == id){ 
 		close(ringmanager->predi->fd);
@@ -130,10 +129,10 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	}
 	
 	if((n = TCPSocketConnect(fd, succiIP, succiPort)) < 0) {
-    printf("IP: %s, Port: %d", succiIP, succiPort);
-		printf("Could not connect to succi.\n");
-		exit(1);
-	} /*ERROR! checking to be done*/
+		printf("Could not connect to succi. Please try again later.\n");
+		fflush(stdout);
+		return 0;
+	}
   
 	ringmanager->id   = id;
 	ringmanager->ring = ring;
@@ -143,7 +142,10 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
   
 	write(fd, msg, strlen(msg));
   
-	if(ringmanager->succi == NULL) ringmanager->succi = malloc(sizeof(Peer));
+	if(ringmanager->succi == NULL){
+		ringmanager->succi = malloc(sizeof(Peer));
+		memset(ringmanager->succi, 0, sizeof(Peer));
+	}
 	
 	ringmanager->succi->fd = fd;
 	ringmanager->succi->id = succiID;
@@ -196,6 +198,8 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 	RingManager * ringmanager;
 
 	ringmanager = (RingManager*)malloc(sizeof(RingManager));
+	memset(ringmanager, 0, sizeof(RingManager));
+	
 	ringmanager->succi = NULL;
 	ringmanager->predi = NULL;
 	ringmanager->id    = -1;		
@@ -209,6 +213,42 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int n = 0;
 	int reqlength = 0;
+	
+	/*if(ringmanager->succi != NULL && FD_ISSET(ringmanager->succi->fd, rfds)){
+		FD_CLR(ringmanager->succi->fd, rfds);
+		
+		n = send(ringmanager->succi->fd, " ", 1, MSG_NOSIGNAL);
+		if (n == -1)
+		{
+			close(ringmanager->succi->fd);
+			free(ringmanager->succi);
+			ringmanager->succi = NULL;
+			
+			printf("Lost connection to succi.\n");
+			fflush(stdout);
+		}
+		
+	}*/
+		
+	/*
+	n = 0;
+	
+	if(ringmanager->predi != NULL && FD_ISSET(ringmanager->predi->fd, rfds)){
+		FD_CLR(ringmanager->predi->fd, rfds);
+	
+		n = send(ringmanager->predi->fd, " ", 1, MSG_NOSIGNAL);
+		if (n == -1)
+		{
+			close(ringmanager->predi->fd);
+			free(ringmanager->predi);
+			ringmanager->predi = NULL;
+			
+			printf("Lost connection to predi.\n");
+			fflush(stdout);
+		}
+	}*/
+	
+	n = 0;
     
 	if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
 		strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
@@ -229,7 +269,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
 			
 			ringmanager->predi->buffer[ringmanager->predi->bufferhead + n] = '\0';
-      
+			
 			/* Check if request is completely in buffer! (could happen that he only receives half \n */
 			reqlength = RequestParseString(request, ringmanager->predi->buffer);
 		  
@@ -293,3 +333,12 @@ void RingManagerLeave(RingManager * ringmanager){
 	ringmanager->id = -1;
 	ringmanager->ring = -1;
 };
+
+void RingManagerStop ( RingManager * ringmanager){
+	if(ringmanager->predi != NULL) free(ringmanager->predi);
+	if(ringmanager->succi != NULL) free(ringmanager->succi);
+	
+	free(ringmanager);
+	
+}
+

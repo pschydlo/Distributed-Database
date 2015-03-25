@@ -2,6 +2,8 @@
 
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
+/*--------- Start Switching Codes ---------- */
+
 /* UI Manager comand hashes */
 
 #define UI_JOIN   592
@@ -18,6 +20,13 @@
 #define UI_EXIT   622
 #define UI_CHECK  1097
 
+
+/* Ring Manager comand hashes */
+
+#define RING_QRY 441
+#define RING_RSP 446
+#define RING_CON 476
+
 /*TCP Manager comand hashes */
 
 #define TCP_NEW  485
@@ -25,65 +34,17 @@
 #define TCP_SUCC 777
 #define TCP_ID   214
 
+/* --------- End Switching Codes ---------- */
 
 struct Server{
 	int isBoot;
+	int shutdown;
 	UDPManager  * udpmanager;
 	TCPManager  * tcpmanager;
 	RingManager * ringmanager;
 	char ip[16];
-	int TCPport, shutdown;
+	int  TCPport;
 };
-
-int hash(char * input);
-
-int ServerProcArg(Server * server, int argc, char ** argv){
-	
-	char * ringPort = NULL;
-	char * bootIP 	= NULL;
-	char * bootPort = NULL;
-	int i, opt;
-
-	opterr = 0;
-	while ((opt = getopt(argc, argv, "t:i:p:")) != -1){
-		switch (opt){					/*I'm sure you can probably clean up this switch somehow, i'll leave that to you*/
-			case 't':
-				ringPort = optarg;
-				break;
-			case 'i':
-				bootIP = optarg;
-				break;
-			case 'p':
-				bootPort = optarg;
-				break;
-			case '?':
-				if (optopt == 't')
-					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-				if (optopt == 'i')
-					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-				if (optopt == 'p')
-					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-				else if(isprint(optopt))
-					fprintf(stderr, "Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]\n", optopt);
-				else
-					fprintf(stderr, "Caracter de opcao desconhecido '\\x%x'.\n", optopt);
-				return 0;
-			default:
-				return 0;
-		}
-  }
-  
-	printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
-
-	for (i = optind; i < argc; i++)
-		fprintf (stderr, "Argumento invalido %s\n", argv[i]);
-	
-	if(ringPort != NULL)	server->TCPport = atoi(ringPort);
-	if(bootIP   != NULL)	UDPManagerSetIP(server->udpmanager, bootIP);
-	if(bootPort != NULL)	UDPManagerSetPort(server->udpmanager, atoi(bootPort));
-
-	return 0;	
-}
 
 Server * ServerInit(int argc, char ** argv, char * ip){
 	Server * server=(Server*)malloc(sizeof(Server));
@@ -98,10 +59,6 @@ Server * ServerInit(int argc, char ** argv, char * ip){
   
 	strcpy(server->ip, ip);
 	server->ringmanager	= RingManagerInit(server->ip, server->TCPport);
-	
-	
-	printf("%s\n", ip);
-	fflush(stdout);
 	
 	return server;
 }
@@ -170,12 +127,10 @@ int ServerStop(Server * server){
 	/*To do: close all active fd's*/
 	
 	UDPManagerStop(server->udpmanager);
-	free(server->udpmanager);	/*Haven't freed addr yet*/
-	free(server->tcpmanager);
-	free(server->ringmanager);
-  
-	/*free(request);*/
-	
+	TCPManagerStop(server->tcpmanager);
+	RingManagerStop(server->ringmanager);
+	free(server);
+ 
 	return 0;
 }
 
@@ -221,83 +176,95 @@ int ServerProcUDPReq(Server * server, Request * request){
 	return 0;
 }
 
-int ServerProcRingReq(Server * server, Request * request){
-  int i = 0;
-  
-  if(RequestGetArgCount(request) <= 0) return 0;
-  
-  printf("Ring wrote: ");
-  
+/* Process Ring Manager Requests */
+
+int ServerProcRingReq(Server * server, Request * request){	
+	int argCount = RequestGetArgCount(request);
+	if(argCount <= 0) return 0;
+
+	/* Debug Code */	
+	
+	printf("Ring wrote: ");
+	int i = 0;
   for(i = 0; i<RequestGetArgCount(request); i++){
-    printf("%s,", RequestGetArg(request, i));
+    printf("%s ", RequestGetArg(request, i));
     fflush(stdout);
-  }
-  
-  printf("\n");
-  
-  if(strcmp(RequestGetArg(request,0),"RSP") == 0) {
-    if(RequestGetArgCount(request) != 6) return 0; 
-    
-    int originID = atoi(RequestGetArg(request, 1));
-    int searchID = atoi(RequestGetArg(request, 2));
-    int responsibleID = atoi(RequestGetArg(request, 3)); 
-    char * responsibleIP = RequestGetArg(request, 4);
-    int responsiblePort = atoi(RequestGetArg(request, 5));
-    
-    if(originID == RingManagerId(server->ringmanager)){
-      //Handle response 
-    }else{
-      RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
-    }
-    
-    
-    //if(originID ==  RingManagerId(server->ringmanager)){
-      //printf("This one is ours!");
-      //fflush(stdout);
-    //}else{
-      //RingManagerRsp(server->ringmanager, originID, searchID, 2, RequestGetArg(request, 3), 9000);
-    //}        
-  }
-  
-  if(strcmp(RequestGetArg(request,0),"CON") == 0){
-    if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
-    
-    int id   = RingManagerId(server->ringmanager);
-    int succiID    = atoi(RequestGetArg(request, 1));
-    char * succiIP = RequestGetArg(request, 2); 
-    int succiPort = atoi(RequestGetArg(request, 3)); 
-                    
-    
-		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
-  }
-  
-  if(strcmp(RequestGetArg(request,0),"QRY") == 0) {
-    if(RequestGetArgCount(request) != 3) return 0; 
-    
-    int originID = atoi(RequestGetArg(request, 1));
-    int searchID = atoi(RequestGetArg(request, 2));
-    
-    if(RingManagerCheck(server->ringmanager, searchID)){
-      RingManagerRsp(server->ringmanager, originID, searchID, RingManagerId(server->ringmanager), server->ip, server->TCPport);
-    }else{
-      RingManagerQuery(server->ringmanager, originID, searchID );
-    }
-    
-    
-    //RingManagerCheck(server->ringmanager, searchID)){
-      //printf("This one is ours!");
-      //fflush(stdout);
-    //}else{
-    //} 
-  }
-  
-	return 1;
-}	
+	} 
+	printf("\n");
+	
+	char * command = RequestGetArg(request,0);
+	int code = hash(command);
+	
+	switch(code){
+		case(RING_RSP):
+		{
+			if(RequestGetArgCount(request) != 6) break; 
+
+			int originID = atoi(RequestGetArg(request, 1));
+			int searchID = atoi(RequestGetArg(request, 2));
+			
+			int    responsibleID    = atoi(RequestGetArg(request, 3)); 
+			char * responsibleIP    = RequestGetArg(request, 4);
+			int    responsiblePort  = atoi(RequestGetArg(request, 5));
+
+			if(originID == RingManagerId(server->ringmanager)){
+				//Handle response 
+			}else{
+				RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
+			}
+			
+			break;
+		}
+		case(RING_CON):
+		{
+			if(RequestGetArgCount(request) != 4) return 0; 
+			
+			int id = RingManagerId(server->ringmanager);
+			
+			int    succiID   = atoi(RequestGetArg(request, 1));
+			char * succiIP   = RequestGetArg(request, 2); 
+			int    succiPort = atoi(RequestGetArg(request, 3)); 
+
+			RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
+			
+			break;
+		}
+		case(RING_QRY):
+		{
+			if(RequestGetArgCount(request) != 3) return 0; 
+
+			int originID = atoi(RequestGetArg(request, 1));
+			int searchID = atoi(RequestGetArg(request, 2));
+
+			if(RingManagerCheck(server->ringmanager, searchID)){
+				RingManagerRsp(server->ringmanager, originID, searchID, RingManagerId(server->ringmanager), server->ip, server->TCPport);
+			}else{
+				RingManagerQuery(server->ringmanager, originID, searchID );
+			}
+			
+		}
+		default:
+			//Handle unrecognized command
+			break;
+	}
+	
+	return 0;
+}
+
+/* Process TCP Manager Requests */
 
 int ServerProcTCPReq(Server * server, Request * request){
 	int argCount = RequestGetArgCount(request);
 	if(argCount <= 0) return 0;
 
+	printf("External wrote: ");
+	int i = 0;
+  for(i = 0; i<RequestGetArgCount(request); i++){
+    printf("%s ", RequestGetArg(request, i));
+    fflush(stdout);
+	} 
+	printf("\n");
+	
 	char * command = RequestGetArg(request,0);
 	int code = hash(command);
 	
@@ -368,6 +335,8 @@ int ServerProcTCPReq(Server * server, Request * request){
 
 	return 1;
 }
+
+/* Process UI Manager Requests */
 
 int ServerProcUIReq(Server * server, Request * request){
 	
@@ -491,4 +460,52 @@ int hash(char *str)
     while (*str)
        h = h << 1 ^ *str++;
     return h;
+}
+
+int ServerProcArg(Server * server, int argc, char ** argv){
+	
+	char * ringPort = NULL;
+	char * bootIP 	= NULL;
+	char * bootPort = NULL;
+	int i, opt;
+
+	opterr = 0;
+	while ((opt = getopt(argc, argv, "t:i:p:")) != -1){
+		switch (opt){					/*I'm sure you can probably clean up this switch somehow, i'll leave that to you*/
+			case 't':
+				ringPort = optarg;
+				break;
+			case 'i':
+				bootIP = optarg;
+				break;
+			case 'p':
+				bootPort = optarg;
+				break;
+			case '?':
+				if (optopt == 't')
+					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+				if (optopt == 'i')
+					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+				if (optopt == 'p')
+					fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+				else if(isprint(optopt))
+					fprintf(stderr, "Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]\n", optopt);
+				else
+					fprintf(stderr, "Caracter de opcao desconhecido '\\x%x'.\n", optopt);
+				return 0;
+			default:
+				return 0;
+		}
+  }
+  
+	printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
+
+	for (i = optind; i < argc; i++)
+		fprintf (stderr, "Argumento invalido %s\n", argv[i]);
+	
+	if(ringPort != NULL)	server->TCPport = atoi(ringPort);
+	if(bootIP   != NULL)	UDPManagerSetIP(server->udpmanager, bootIP);
+	if(bootPort != NULL)	UDPManagerSetPort(server->udpmanager, atoi(bootPort));
+
+	return 0;	
 }

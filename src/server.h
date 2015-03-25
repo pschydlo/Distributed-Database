@@ -20,3 +20,5 @@ int ServerProcUDPReq(Server * server, Request * request);
 int ServerProcRingReq(Server * server, Request * request);
 int ServerProcTCPReq(Server * server, Request * request);
 int ServerProcUIReq(Server * server, Request * request);
+
+int hash(char * input);
