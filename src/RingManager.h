@@ -22,6 +22,7 @@ int RingManagerStatus(RingManager * ringmanager);
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * ip, int port);
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port);
+void RingManagerLeave(RingManager * ringmanager);
 
 int RingManagerArm(RingManager * ringmanager, fd_set * rfds, int * maxfd);
 

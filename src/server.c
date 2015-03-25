@@ -2,19 +2,27 @@
 
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
-#define JOIN 	592
-#define LEAVE   1253
-#define SHOW 	657
-#define RSP 	350
-#define SEARCH 2654
-#define BOOPP  1140
-#define BOOPS  1143
-#define STREAM 2955
-#define CLOSESTREAM 69707
-#define HASH   586
-#define SEND   692
-#define EXIT   622
-#define CHECK  1097
+/* UI Manager comand hashes */
+
+#define UI_JOIN   592
+#define UI_LEAVE  1253
+#define UI_SHOW   657
+#define UI_RSP 	  350
+#define UI_SEARCH 2654
+#define UI_BOOPP  1140
+#define UI_BOOPS  1143
+#define UI_STREAM 2955
+#define UI_CLOSESTREAM 69707
+#define UI_HASH   586
+#define UI_SEND   692
+#define UI_EXIT   622
+#define UI_CHECK  1097
+
+/*TCP Manager comand hashes */
+
+#define TCP_NEW  485
+#define TCP_CON  476
+#define TCP_SUCC 777
 
 struct Server{
 	int isBoot;
@@ -230,13 +238,14 @@ int ServerProcRingReq(Server * server, Request * request){
     
     int originID = atoi(RequestGetArg(request, 1));
     int searchID = atoi(RequestGetArg(request, 2));
-    char * responsibleIP = RequestGetArg(request, 3);
-    int responsiblePort = atoi(RequestGetArg(request, 4));
+    int responsibleID = atoi(RequestGetArg(request, 3)); 
+    char * responsibleIP = RequestGetArg(request, 4);
+    int responsiblePort = atoi(RequestGetArg(request, 5));
     
     if(originID == RingManagerId(server->ringmanager)){
       //Handle response 
     }else{
-      RingManagerRsp(server->ringmanager, originID, searchID, 2, responsibleIP, responsiblePort);
+      RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
     }
     
     
@@ -284,75 +293,59 @@ int ServerProcRingReq(Server * server, Request * request){
 }	
 
 int ServerProcTCPReq(Server * server, Request * request){
+	int argCount = RequestGetArgCount(request);
+	if(argCount <= 0) return 0;
 
-  int i = 0;
-  
-  if(RequestGetArgCount(request) <= 0) return 0;
-  
-  printf("External wrote: ");
-  
-  for(i = 0; i<RequestGetArgCount(request); i++){
-    printf("%s,", RequestGetArg(request, i));
-    fflush(stdout);
-  }
-  
-  printf("\n");
-  
-  if(strcmp(RequestGetArg(request,0),"NEW") == 0){
-    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
-    
-    int originID    = atoi(RequestGetArg(request, 1));
-    char * originIP = RequestGetArg(request, 2);
-    int originPort  = atoi(RequestGetArg(request, 3));
-    
-    RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
-    TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
-  }
-  
-  if(strcmp(RequestGetArg(request,0),"CON") == 0){
-    //if(RequestGetArgCount(request) != 4) return 0; /*comented for testing purposes!*/
-    
-    int id   = RingManagerId(server->ringmanager);
-    int succiID    = atoi(RequestGetArg(request, 1));
-    char * succiIP = RequestGetArg(request, 2); 
-    int succiPort = atoi(RequestGetArg(request, 3)); 
+	char * command = RequestGetArg(request,0);
+	int code = hash(command);
+	
+	switch(code){
+		case(TCP_NEW):
+		{
+			if(RequestGetArgCount(request) != 4) break;
+			
+			int originID    = atoi(RequestGetArg(request, 1));
+			char * originIP = RequestGetArg(request, 2);
+			int originPort  = atoi(RequestGetArg(request, 3));
+			
+			RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
+			TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
+			
+			break;
+		}
+		case(TCP_CON):
+		{
+			int id   = RingManagerId(server->ringmanager);
+			int succiID    = atoi(RequestGetArg(request, 1));
+			char * succiIP = RequestGetArg(request, 2); 
+			int succiPort = atoi(RequestGetArg(request, 3)); 
                     
-    
-		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
-  }
-  /*A esta hora da noite só escrevo porcaria. Isto ainda falta muito pensar*/
-  /*if(strcmp(RequestGetArg(request,0),"ID") == 0){
-    if(RequestGetArgCount(request) != 2) return 0;
-    
-		int search = atoi(RequestGetArg(request, 1));
-		int id     = RingManagerId(server->ringmanager);
-		
-		if(RingManagerCheck(server->ringmanager, search)){
-            char msg[50];
-            sprintf(msg, "SUCC %d %s %d\n", UDPManagerID(server->udpmanager), server->ip, server->TCPport);
-            write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
-            }
-		else RingManagerQuery(server->ringmanager, id, search);
-      
-  }*/
-  
-  if(strcmp(RequestGetArg(request, 0), "SUCC") == 0){
-    int destID = atoi(RequestGetArg(request, 1));
-    if(UDPManagerID(server->udpmanager) == destID){
-        printf("ID %d already in use in ring, please select another\n", destID);
-        return 0;
-    }
-        char * destIP   = RequestGetArg(request, 2); 
-        int destPort    = atoi(RequestGetArg(request, 3)); 
+			RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
+			
+			break;	
+		}
+		case(TCP_SUCC):
+		{
+			int destID = atoi(RequestGetArg(request, 1));
+			char * destIP   = RequestGetArg(request, 2); 
+			int destPort    = atoi(RequestGetArg(request, 3)); 
 
-        RingManagerConnect(server->ringmanager,
-                        UDPManagerRing(server->udpmanager), 
-                        UDPManagerID(server->udpmanager), 
-                        destID, destIP, destPort);
-    
-    }
-  
-  return 1;
+			if(UDPManagerID(server->udpmanager) == destID){
+				printf("ID %d already in use in ring, please select another\n", destID);
+				return 0;
+			}
+			
+			RingManagerConnect(server->ringmanager,
+							UDPManagerRing(server->udpmanager), 
+							UDPManagerID(server->udpmanager), 
+							destID, destIP, destPort);
+			break;
+		}
+		default: 
+			break;
+	}
+
+	return 1;
 }
 
 int ServerProcUIReq(Server * server, Request * request){
@@ -364,7 +357,7 @@ int ServerProcUIReq(Server * server, Request * request){
 	int code = hash(command);
 	
 	switch(code){
-		case(JOIN):
+		case(UI_JOIN):
 		{
 			if(argCount == 3){
 				/*Send UDP BQRY x*/
@@ -386,19 +379,19 @@ int ServerProcUIReq(Server * server, Request * request){
 			}
 			break;
 		}
-		case(LEAVE):
+		case(UI_LEAVE):
 			/* To do: Check if only one in ring, if so,
 			 * tell boot server to remove node. Else:
 			 * REG x succi to boot server and*/
-			RingManagerMsg(server->ringmanager, 1, "CON succi s.IP s.TCP");	
+			RingManagerLeave(server->ringmanager);
 			break;	
-		case(SHOW):
+		case(UI_SHOW):
 			RingManagerStatus(server->ringmanager);
 			break;
-		case(RSP):
+		case(UI_RSP):
 			RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
 			break;	
-		case (SEARCH):
+		case(UI_SEARCH):
 		{
 			/*Reminder: limit commands if user is not connect to ring*/
 			if(RequestGetArgCount(request) < 2) return 0;
@@ -413,14 +406,14 @@ int ServerProcUIReq(Server * server, Request * request){
 			}
 			break;
 		}
-		case(BOOPP):
+		case(UI_BOOPP):
 			RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
 			
 			break;
-		case(BOOPS):
+		case(UI_BOOPS):
 			RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");
 			break;
-		case(STREAM):
+		case(UI_STREAM):
 		{
 			char buffer[100];
 			fgets(buffer, 100, stdin);
@@ -429,13 +422,13 @@ int ServerProcUIReq(Server * server, Request * request){
 			RingManagerMsg(server->ringmanager, 1, buffer);
 			break;
 		}
-		case (CLOSESTREAM):
+		case (UI_CLOSESTREAM):
 			RingManagerMsg(server->ringmanager, 1, "\n");
 			break;	
-		case(HASH):
+		case(UI_HASH):
 			printf("hash: %i\n", hash(RequestGetArg(request, 1)));
 			break;
-		case(SEND):
+		case(UI_SEND):
 		{
 			char buffer[100];
 			fgets(buffer, 100, stdin);
@@ -443,10 +436,10 @@ int ServerProcUIReq(Server * server, Request * request){
 			RingManagerMsg(server->ringmanager, 1, buffer);
 			break;
 		}
-		case(EXIT):
+		case(UI_EXIT):
 			server->shutdown = 1;
 			break;
-		case(CHECK):
+		case(UI_CHECK):
 		{			
 			int id = atoi(RequestGetArg(request, 1));
 			
