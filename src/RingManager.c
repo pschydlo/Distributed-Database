@@ -24,7 +24,8 @@ int RingManagerId(RingManager * ringmanager){
 	return ringmanager->id;
 }
 
-int RingManagerSetId(RingManager * ringmanager, int id){
+int RingManagerSetRing(RingManager * ringmanager, int ring, int id){
+	ringmanager->ring = ring;
 	ringmanager->id = id;
 	return 0;
 }
@@ -115,7 +116,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	
 	int n, fd = TCPSocketCreate();
 	
-	if(succiID == id){ 
+	if(succiID == id){
 		close(ringmanager->predi->fd);
 		close(ringmanager->succi->fd);
 		

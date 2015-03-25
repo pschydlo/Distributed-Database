@@ -137,6 +137,7 @@ int ServerStop(Server * server){
 int ServerProcUDPReq(Server * server, Request * request){
 	
 	if(RequestGetArgCount(request) <= 0) return 0;
+	if(strcmp(RequestGetArg(request, 0), "OK") == 0) RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
 	if(strcmp(RequestGetArg(request, 0), "NOK") == 0) printf("Problem with UDP\n");
 	if(strcmp(RequestGetArg(request, 0), "EMPTY") == 0) UDPManagerReg(server->udpmanager, server->ip, server->TCPport);
 	if(strcmp(RequestGetArg(request, 0), "BRSP") == 0){
@@ -162,7 +163,6 @@ int ServerProcUDPReq(Server * server, Request * request){
 		sprintf(msg, "ID %d\n", UDPManagerID(server->udpmanager));
   
 		write(idfd, msg, strlen(msg));
-		return 0;
 	/*Until here*/
         }else printf("ID %d occupied, please choose another\n", destID);
 	}
@@ -209,6 +209,12 @@ int ServerProcRingReq(Server * server, Request * request){
 
 			if(originID == RingManagerId(server->ringmanager)){
 				//Handle response 
+        /*Simple printf if the UI asked for it?*/
+          if(searchID == TCPManagerSearchID(server->tcpmanager)){
+            /*Put SUCC sending into a function eventually*/		char msg[50];
+            sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
+            write(idfd, msg, strlen(msg));
+          }
 			}else{
 				RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
 			}
@@ -301,11 +307,12 @@ int ServerProcTCPReq(Server * server, Request * request){
 
 			if(UDPManagerID(server->udpmanager) == destID){
 				printf("ID %d already in use in ring, please select another\n", destID);
-				return 0;
+				break;
+        close(UDPManagerID(server->udpmanager);
 			}
 			
 			close(TCPManagerIDfd(server->tcpmanager));
-			TCPManagerIDfd(server->tcpmanager);
+			TCPManagerSetSearch(server->tcpmanager, -1, -1);
 			
 			RingManagerConnect(server->ringmanager,
 							UDPManagerRing(server->udpmanager), 
@@ -325,7 +332,7 @@ int ServerProcTCPReq(Server * server, Request * request){
 			}
 			else{
 				RingManagerQuery(server->ringmanager, id, search);
-				
+				TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), search);
 			}
 		}
 		

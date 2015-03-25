@@ -11,6 +11,8 @@
 typedef struct TCPManager TCPManager;
 
 int TCPManagerIDfd(TCPManager * tcpmanager);
+int TCPManagerSearchID(TCPManager * tcpmanager);
+int TCPManagerSetSearch(TCPManager * tcpmanager, int idfd, int searchid);
 
 TCPManager * TCPManagerInit();
 int TCPManagerStart(TCPManager * tcpmanager, int TCPport);

@@ -13,6 +13,16 @@ int TCPManagerIDfd(TCPManager * tcpmanager){
     return tcpmanager->idfd;
 }
 
+int TCPManagerSearchID(TCPManager * tcpmanager){
+    return tcpmanager->searchid;
+}
+
+int TCPManagerSetSearch(TCPManager * tcpmanager, int idfd, int searchid){ /*We can probably fit this in another module I can't quite visualise now*/
+    tcpmanager->idfd      = idfd;
+    tcpmanager->searchid  = searchid;
+    return 0;
+}
+
 TCPManager * TCPManagerInit(){
 	int i = 0;
 	TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));

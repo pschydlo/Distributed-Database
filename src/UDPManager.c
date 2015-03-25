@@ -1,8 +1,8 @@
 #include "UDPManager.h"
 
 struct UDPManager{
-	char ip[16];
 	int ring, id;
+	char ip[16];
 	int port, fd, tcpfd;
 	struct sockaddr_in * addr;
 	
@@ -44,7 +44,6 @@ int UDPManagerReg(UDPManager * udpmanager, char * ip, int port){
 	if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
 	return 0;
 }
-
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
 	FD_SET(udpmanager->fd, rfds);
