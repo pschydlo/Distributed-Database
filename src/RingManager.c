@@ -216,11 +216,11 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int reqlength = 0;
 	
 	if(ringmanager->succi != NULL && FD_ISSET(ringmanager->succi->fd, rfds)){
-		FD_CLR(ringmanager->succi->fd, rfds);
-		
 		n = send(ringmanager->succi->fd, " ", 1, MSG_NOSIGNAL);
 		if (n == -1)
 		{
+			FD_CLR(ringmanager->succi->fd, rfds);
+			
 			close(ringmanager->succi->fd);
 			free(ringmanager->succi);
 			ringmanager->succi = NULL;
@@ -231,15 +231,14 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 		
 	}
 		
-	/*
 	n = 0;
 	
 	if(ringmanager->predi != NULL && FD_ISSET(ringmanager->predi->fd, rfds)){
-		FD_CLR(ringmanager->predi->fd, rfds);
-	
 		n = send(ringmanager->predi->fd, " ", 1, MSG_NOSIGNAL);
 		if (n == -1)
 		{
+			FD_CLR(ringmanager->predi->fd, rfds);
+		
 			close(ringmanager->predi->fd);
 			free(ringmanager->predi);
 			ringmanager->predi = NULL;
@@ -247,7 +246,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 			printf("Lost connection to predi.\n");
 			fflush(stdout);
 		}
-	}*/
+	}
 	
 	n = 0;
     
@@ -316,9 +315,6 @@ void RingManagerLeave(RingManager * ringmanager){
 
 	char msg[50];
 	sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port); 
-	
-	printf("%s", msg);
-	fflush(stdout);
             
 	write(ringmanager->predi->fd, msg, strlen(msg));
 	
@@ -333,9 +329,14 @@ void RingManagerLeave(RingManager * ringmanager){
 	
 	ringmanager->id = -1;
 	ringmanager->ring = -1;
+	
+	printf("Sucessfully left ring.\n");
+	fflush(stdout);
 };
 
 void RingManagerStop ( RingManager * ringmanager){
+	RingManagerLeave(ringmanager);
+	
 	if(ringmanager->predi != NULL) free(ringmanager->predi);
 	if(ringmanager->succi != NULL) free(ringmanager->succi);
 	
