@@ -314,9 +314,6 @@ void RingManagerLeave(RingManager * ringmanager){
 
 	char msg[50];
 	sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port); 
-	
-	printf("%s", msg);
-	fflush(stdout);
             
 	write(ringmanager->predi->fd, msg, strlen(msg));
 	
@@ -331,6 +328,9 @@ void RingManagerLeave(RingManager * ringmanager){
 	
 	ringmanager->id = -1;
 	ringmanager->ring = -1;
+	
+	printf("Sucessfully left ring.\n");
+	fflush(stdout);
 };
 
 void RingManagerStop ( RingManager * ringmanager){
