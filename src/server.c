@@ -2,6 +2,12 @@
 
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
+#define JOIN 	592
+#define LEAVE 1253
+#define SHOW 	657
+#define RSP 	350
+
+
 struct Server{
 	int isBoot;
 	UDPManager  * udpmanager;
@@ -11,10 +17,12 @@ struct Server{
 	int TCPport, shutdown;
 };
 
+int hash(char * input);
+
 int ServerProcArg(Server * server, int argc, char ** argv){
 	
 	char * ringPort = NULL;
-	char * bootIP = NULL;
+	char * bootIP 	= NULL;
 	char * bootPort = NULL;
 	int i, opt;
 
@@ -283,27 +291,54 @@ int ServerProcTCPReq(Server * server, Request * request){
 }
 
 int ServerProcUIReq(Server * server, Request * request){
-	int i = 0;
-	char * command;
 	char buffer[100];
 	
 	if(RequestGetArgCount(request) <= 0) return 0;
-	
-	printf("You wrote: ");
-	
-	for(i = 0; i<RequestGetArgCount(request); i++){
-		printf("%s ", RequestGetArg(request, i));
-		fflush(stdout);
-	}
-  
-	printf("\n");
-	
-  /* Idk if you want to leave the translator here,
-   * we should probably make a seperate module for it,
-   * and here we should leave the interpretation for
-   * CON, QRY, etc, perhaps also in a module, as you love to do.*/
 
-	command = RequestGetArg(request,0);
+	char * command = RequestGetArg(request,0);
+	int code = hash(command);
+	
+	switch(code){
+		case(JOIN):
+			if(RequestGetArgCount(request) == 3){
+				/*Send UDP BQRY x*/
+				/*if(BQRY == EMPTY)*/
+				/*RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));*/
+				UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
+				/*UDPManagerReg(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));*/
+				/*else send(ID)*/
+				/*receive "SUCC" from succi*/
+			}else if(RequestGetArgCount(request) == 6){
+			
+				int ring = atoi(RequestGetArg(request, 1));
+				int id   = atoi(RequestGetArg(request, 2));
+				int succiID    = atoi(RequestGetArg(request, 3));
+				char * succiIP = RequestGetArg(request, 4); 
+				int succiPort  = atoi(RequestGetArg(request, 5)); 
+
+				RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+			}
+			return 0;
+		
+		case(LEAVE):
+		/* To do: Check if only one in ring, if so,
+		 * tell boot server to remove node. Else:
+		 * REG x succi to boot server and*/
+			RingManagerMsg(server->ringmanager, 1, "CON succi s.IP s.TCP");	
+			/* Maybe make a specific function to CON and QRY
+		 	 * instead of generalized message function */
+			/*Reset all succi, predi, etc*/
+			return 0;
+			break;	
+		case(SHOW):
+			RingManagerStatus(server->ringmanager);
+			return 0;
+		case(RSP):
+			RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
+			return 0;	
+	}
+	
+	
 	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
 		if(count == 3){
@@ -356,6 +391,7 @@ int ServerProcUIReq(Server * server, Request * request){
 	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
 	else if(strcmp(RequestGetArg(request,0),"part1") == 0) RingManagerMsg(server->ringmanager, 1, "Bo");
 	else if(strcmp(RequestGetArg(request,0),"part2") == 0) RingManagerMsg(server->ringmanager, 1, "op\n");
+	else if(strcmp(command,"hash") == 0) printf("hash: %i\n", hash(RequestGetArg(request, 1)));
 	else if(strcmp(RequestGetArg(request,0),"send") == 0){
 		fgets(buffer, 100, stdin);
 		RingManagerMsg(server->ringmanager, 1, buffer);
@@ -376,13 +412,21 @@ void ServerSetIP(Server * server, char* ip){
 	strcpy(server->ip,ip);
 }
 
-unsigned long hash(unsigned char *str) /* djb2 algorithm */
+/*unsigned long hash(unsigned char *str) 
 {
 	unsigned long hash = 5381;
 	int c;
 
 	while ((c = *str++))
-		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+		hash = ((hash << 5) + hash) + c;
 
 	return hash;
+}*/
+
+int hash(char *str)
+{
+    int h = 0;
+    while (*str)
+       h = h << 1 ^ *str++;
+    return h;
 }
