@@ -339,6 +339,8 @@ int ServerProcUIReq(Server * server, Request * request){
 	}
 	
 	
+	
+	
 	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
 		if(count == 3){
@@ -411,17 +413,6 @@ int ServerProcUIReq(Server * server, Request * request){
 void ServerSetIP(Server * server, char* ip){
 	strcpy(server->ip,ip);
 }
-
-/*unsigned long hash(unsigned char *str) 
-{
-	unsigned long hash = 5381;
-	int c;
-
-	while ((c = *str++))
-		hash = ((hash << 5) + hash) + c;
-
-	return hash;
-}*/
 
 int hash(char *str)
 {
