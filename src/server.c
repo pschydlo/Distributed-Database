@@ -3,11 +3,18 @@
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
 #define JOIN 	592
-#define LEAVE 1253
+#define LEAVE   1253
 #define SHOW 	657
 #define RSP 	350
 #define SEARCH 2654
-
+#define BOOPP  1140
+#define BOOPS  1143
+#define STREAM 2955
+#define CLOSESTREAM 69707
+#define HASH   586
+#define SEND   692
+#define EXIT   622
+#define CHECK  1097
 
 struct Server{
 	int isBoot;
@@ -144,22 +151,22 @@ int ServerStart(Server * server){
 		} while(n != 0);
 	}
   
-  RequestDestroy(request);
+	RequestDestroy(request);
   
 	return 0;
 }
 
 int ServerStop(Server * server){
-  /*To do: close all active fd's*/
+	/*To do: close all active fd's*/
 	
-  UDPManagerStop(server->udpmanager);
-  free(server->udpmanager);	/*Haven't freed addr yet*/
+	UDPManagerStop(server->udpmanager);
+	free(server->udpmanager);	/*Haven't freed addr yet*/
 	free(server->tcpmanager);
 	free(server->ringmanager);
   
-  /*free(request);*/
+	/*free(request);*/
 	
-  return 0;
+	return 0;
 }
 
 int ServerProcUDPReq(Server * server, Request * request){
@@ -349,11 +356,8 @@ int ServerProcTCPReq(Server * server, Request * request){
 }
 
 int ServerProcUIReq(Server * server, Request * request){
-	char buffer[100];
 	
-	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	int argCount = RequestGetArgCount(request);
-	
 	if(argCount <= 0) return 0;
 
 	char * command = RequestGetArg(request,0);
@@ -361,6 +365,7 @@ int ServerProcUIReq(Server * server, Request * request){
 	
 	switch(code){
 		case(JOIN):
+		{
 			if(argCount == 3){
 				/*Send UDP BQRY x*/
 				/*if(BQRY == EMPTY)*/
@@ -379,25 +384,22 @@ int ServerProcUIReq(Server * server, Request * request){
 
 				RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
 			}
-			return 0;
-		
+			break;
+		}
 		case(LEAVE):
-		/* To do: Check if only one in ring, if so,
-		 * tell boot server to remove node. Else:
-		 * REG x succi to boot server and*/
+			/* To do: Check if only one in ring, if so,
+			 * tell boot server to remove node. Else:
+			 * REG x succi to boot server and*/
 			RingManagerMsg(server->ringmanager, 1, "CON succi s.IP s.TCP");	
-			/* Maybe make a specific function to CON and QRY
-		 	 * instead of generalized message function */
-			/*Reset all succi, predi, etc*/
-			return 0;
 			break;	
 		case(SHOW):
 			RingManagerStatus(server->ringmanager);
-			return 0;
+			break;
 		case(RSP):
 			RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
-			return 0;	
+			break;	
 		case (SEARCH):
+		{
 			/*Reminder: limit commands if user is not connect to ring*/
 			if(RequestGetArgCount(request) < 2) return 0;
 
@@ -409,72 +411,60 @@ int ServerProcUIReq(Server * server, Request * request){
 			} else {
 				RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
 			}
-			return 0;
-	}
-	
-	
-	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
-		if(count == 3){
-      
-			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
-      
-			return 0;
-		}else if(count == 6){
+			break;
+		}
+		case(BOOPP):
+			RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
 			
-			int ring = atoi(RequestGetArg(request, 1));
-			int id   = atoi(RequestGetArg(request, 2));
-			int succiID    = atoi(RequestGetArg(request, 3));
-			char * succiIP = RequestGetArg(request, 4); 
-			int succiPort = atoi(RequestGetArg(request, 5)); 
-
-			RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
-			return 0;
-		}	
-	}else if(strcmp(command,"leave") == 0){
-		/* To do: Check if only one in ring, if so,
-		 * tell boot server to remove node. Else:
-		 * REG x succi to boot server and*/
-		RingManagerMsg(server->ringmanager, 1, "CON succi s.IP s.TCP");	/* This is incredibly annoying to do here, perhaps migrate this function into RM, 
-																		 * after making RM know what Request is, and it can know what to do with the info inside it
-																		 */
-		/* Maybe make a specific function to CON and QRY
-		 * instead of generalized message function
-		 */
-		
-		
-		/*Reset all succi, predi, etc*/
-		return 0;
+			break;
+		case(BOOPS):
+			RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");
+			break;
+		case(STREAM):
+		{
+			char buffer[100];
+			fgets(buffer, 100, stdin);
+			buffer[strlen(buffer)-1] = '\0';
+			
+			RingManagerMsg(server->ringmanager, 1, buffer);
+			break;
+		}
+		case (CLOSESTREAM):
+			RingManagerMsg(server->ringmanager, 1, "\n");
+			break;	
+		case(HASH):
+			printf("hash: %i\n", hash(RequestGetArg(request, 1)));
+			break;
+		case(SEND):
+		{
+			char buffer[100];
+			fgets(buffer, 100, stdin);
+			
+			RingManagerMsg(server->ringmanager, 1, buffer);
+			break;
+		}
+		case(EXIT):
+			server->shutdown = 1;
+			break;
+		case(CHECK):
+		{			
+			int id = atoi(RequestGetArg(request, 1));
+			
+			if(RingManagerCheck(server->ringmanager, id)){
+				printf("It's ours");
+			} else {
+				printf("No luck here");
+			}
+			
+			fflush(stdout);
+			break;
+		}
+		default:
+			printf("Comando não reconhecido\n");
+			break;
 	}
-	else if(strcmp(command,"show") == 0) RingManagerStatus(server->ringmanager);
-  else if(strcmp(command,"rsp") == 0) RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
-	else if(strcmp(command,"search") == 0){		/*Reminder: limit commands if user is not connect to ring*/
-		if(count < 2) return 0;
-    
-		int search = atoi(RequestGetArg(request, 1));
-		int id     = RingManagerId(server->ringmanager);
-		
-		if(RingManagerCheck(server->ringmanager, search)) printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
-		else RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
-		return 0;
-	}else if(strcmp(RequestGetArg(request,0),"boops") == 0) RingManagerMsg(server->ringmanager, 0, "Boop\nBoop\n");/*Debugging boops*/
-	else if(strcmp(RequestGetArg(request,0),"boopp") == 0) RingManagerMsg(server->ringmanager, 1, "Boop\nBoop\n");
-	else if(strcmp(RequestGetArg(request,0),"part1") == 0) RingManagerMsg(server->ringmanager, 1, "Bo");
-	else if(strcmp(RequestGetArg(request,0),"part2") == 0) RingManagerMsg(server->ringmanager, 1, "op\n");
-	else if(strcmp(command,"hash") == 0) printf("hash: %i\n", hash(RequestGetArg(request, 1)));
-	else if(strcmp(RequestGetArg(request,0),"send") == 0){
-		fgets(buffer, 100, stdin);
-		RingManagerMsg(server->ringmanager, 1, buffer);
-		return 0;
-	}else if(strcmp(RequestGetArg(request,0),"exit") == 0) server->shutdown = 1;
-	else if(strcmp(RequestGetArg(request,0),"check") == 0){
-	  if(RingManagerCheck(server->ringmanager, atoi(RequestGetArg(request, 1)))) printf("It's ours");
-	  else printf("No luck here");
-	  fflush(stdout);
-	  return 0;
-	} 
-	else printf("Comando não reconhecido\n");
 	
-	return 1;
+	return 0;
 }
 
 void ServerSetIP(Server * server, char* ip){
