@@ -214,7 +214,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int n = 0;
 	int reqlength = 0;
 	
-	/*if(ringmanager->succi != NULL && FD_ISSET(ringmanager->succi->fd, rfds)){
+	if(ringmanager->succi != NULL && FD_ISSET(ringmanager->succi->fd, rfds)){
 		FD_CLR(ringmanager->succi->fd, rfds);
 		
 		n = send(ringmanager->succi->fd, " ", 1, MSG_NOSIGNAL);
@@ -228,7 +228,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 			fflush(stdout);
 		}
 		
-	}*/
+	}
 		
 	/*
 	n = 0;
