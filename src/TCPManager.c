@@ -38,7 +38,7 @@ int TCPManagerStart(TCPManager * tcpmanager, int TCPport){
 int TCPManagerArm( TCPManager * tcpmanager, fd_set * rfds, int * maxfd ){
 
 	FD_SET(tcpmanager->pfd, rfds);
-        if(tcpmanager->idfd != -1) FD_SET(tcpmanager->idfd, rfds);      /*temp id socket for outgoing ID asking*/
+  //if(tcpmanager->idfd != -1) FD_SET(tcpmanager->idfd, rfds);      /*temp id socket for outgoing ID asking*/
 	if(tcpmanager->pfd > *maxfd) *maxfd = tcpmanager->pfd;
 	
 	int i = 0;
@@ -78,7 +78,7 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
 		}
 	}
         
-        if(FD_ISSET(tcpmanager->idfd,rfds)){
+       /* if(FD_ISSET(tcpmanager->idfd,rfds)){
             FD_CLR(tcpmanager->idfd, rfds);
             if((n=read(tcpmanager->idfd,buffer,128))!=0){
                 if(n==-1)exit(1);
@@ -89,7 +89,7 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
                 
                 reqcount = 1;
             }
-        }
+        }*/
                 
                         
 

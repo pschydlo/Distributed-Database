@@ -6,6 +6,7 @@
 #define LEAVE 1253
 #define SHOW 	657
 #define RSP 	350
+#define SEARCH 2654
 
 
 struct Server{
@@ -350,14 +351,17 @@ int ServerProcTCPReq(Server * server, Request * request){
 int ServerProcUIReq(Server * server, Request * request){
 	char buffer[100];
 	
-	if(RequestGetArgCount(request) <= 0) return 0;
+	int count = RequestGetArgCount(request);/*Perhaps change this*/
+	int argCount = RequestGetArgCount(request);
+	
+	if(argCount <= 0) return 0;
 
 	char * command = RequestGetArg(request,0);
 	int code = hash(command);
 	
 	switch(code){
 		case(JOIN):
-			if(RequestGetArgCount(request) == 3){
+			if(argCount == 3){
 				/*Send UDP BQRY x*/
 				/*if(BQRY == EMPTY)*/
 				/*RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));*/
@@ -365,7 +369,7 @@ int ServerProcUIReq(Server * server, Request * request){
 				/*UDPManagerReg(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));*/
 				/*else send(ID)*/
 				/*receive "SUCC" from succi*/
-			}else if(RequestGetArgCount(request) == 6){
+			}else if(argCount == 6){
 			
 				int ring = atoi(RequestGetArg(request, 1));
 				int id   = atoi(RequestGetArg(request, 2));
@@ -393,12 +397,22 @@ int ServerProcUIReq(Server * server, Request * request){
 		case(RSP):
 			RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
 			return 0;	
+		case (SEARCH):
+			/*Reminder: limit commands if user is not connect to ring*/
+			if(RequestGetArgCount(request) < 2) return 0;
+
+			int search = atoi(RequestGetArg(request, 1));
+			int id     = RingManagerId(server->ringmanager);
+
+			if( RingManagerCheck(server->ringmanager, search) ){
+				printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
+			} else {
+				RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
+			}
+			return 0;
 	}
 	
 	
-	
-	
-	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
 		if(count == 3){
       
