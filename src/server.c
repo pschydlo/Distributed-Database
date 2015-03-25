@@ -23,6 +23,8 @@
 #define TCP_NEW  485
 #define TCP_CON  476
 #define TCP_SUCC 777
+#define TCP_ID   214
+
 
 struct Server{
 	int isBoot;
