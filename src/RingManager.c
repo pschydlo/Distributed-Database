@@ -28,7 +28,7 @@ int RingManagerSetId(RingManager * ringmanager, int id){
 	return 0;
 }
 
-int d(int k, int l){			/*Possibility to place this module somewhere else, for other comparisons as may be needed*/
+int d(int k, int l){
 	if((l-k) < 0) return (64+l-k);
 	return (l-k);
 }
@@ -207,18 +207,18 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 			
 			ringmanager->predi->buffer[ringmanager->predi->bufferhead + n] = '\0';
       
-      /* Check if request is completely in buffer! (could happen that he only receives half \n */
-      reqlength = RequestParseString(request, ringmanager->predi->buffer);
-      
-			if(reqlength == 0){
-				ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
-				return 0;
-			}
-        
-      strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
-      ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
-      return 1;
-    }
+		  /* Check if request is completely in buffer! (could happen that he only receives half \n */
+		  reqlength = RequestParseString(request, ringmanager->predi->buffer);
+		  
+				if(reqlength == 0){
+					ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+					return 0;
+				}
+			
+		  strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
+		  ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+		  return 1;
+		}
 	}
 	
 	if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){

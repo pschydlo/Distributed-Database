@@ -158,8 +158,34 @@ int ServerProcUDPReq(Server * server, Request * request){
 	if(RequestGetArgCount(request) <= 0) return 0;
 	if(strcmp(RequestGetArg(request, 0), "NOK") == 0) printf("Problem with UDP\n");
 	if(strcmp(RequestGetArg(request, 0), "EMPTY") == 0) UDPManagerReg(server->udpmanager, server->ip, server->TCPport);
-	if(strcmp(RequestGetArg(request, 0), "BRSP") == 0); /*TCP connect, send ID i*/
-	
+	if(strcmp(RequestGetArg(request, 0), "BRSP") == 0){
+		/*Stop freaking out, I left this unmodularized on purpose so I wouldn't put it in the wrong place
+		 * We can decide to place this entire section in the correct place eventually,
+		 * also, this is pretty much just a test*/
+		int destID 		= atoi(RequestGetArg(request, 2));
+		char * destIP 	= RequestGetArg(request, 3);
+		int destPort 	= atoi(RequestGetArg(request, 4));
+		
+		int id = UDPManagerID(server->udpmanager);
+		
+		if(id != destID){
+		
+		int n, idfd = TCPSocketCreate();
+		if((n = TCPSocketConnect(idfd, destIP, destPort)) < 0){
+			printf("IP: %s, Port: %d", destIP, destPort);
+			printf("Could not connect to boot vertex.");
+			exit(1);
+		} /*ERROR! checking to be done*/
+		
+		char msg[50];
+		sprintf(msg, "ID %d\n", UDPManagerID(server->udpmanager));
+  
+		write(idfd, msg, strlen(msg));
+		return 0;
+	/*Until here*/
+        }else printf("ID %d occupied, please choose another\n", destID);
+	}
+		
 	int i;
 	for(i = 0; i<RequestGetArgCount(request); i++){
 		printf("%s,", RequestGetArg(request, i));
@@ -278,6 +304,37 @@ int ServerProcTCPReq(Server * server, Request * request){
     
 		RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
   }
+  /*A esta hora da noite só escrevo porcaria. Isto ainda falta muito pensar*/
+  /*if(strcmp(RequestGetArg(request,0),"ID") == 0){
+    if(RequestGetArgCount(request) != 2) return 0;
+    
+		int search = atoi(RequestGetArg(request, 1));
+		int id     = RingManagerId(server->ringmanager);
+		
+		if(RingManagerCheck(server->ringmanager, search)){
+            char msg[50];
+            sprintf(msg, "SUCC %d %s %d\n", UDPManagerID(server->udpmanager), server->ip, server->TCPport);
+            write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
+            }
+		else RingManagerQuery(server->ringmanager, id, search);
+      
+  }*/
+  
+  if(strcmp(RequestGetArg(request, 0), "SUCC") == 0){
+    int destID = atoi(RequestGetArg(request, 1));
+    if(UDPManagerID(server->udpmanager) == destID){
+        printf("ID %d already in use in ring, please select another\n", destID);
+        return 0;
+    }
+        char * destIP   = RequestGetArg(request, 2); 
+        int destPort    = atoi(RequestGetArg(request, 3)); 
+
+        RingManagerConnect(server->ringmanager,
+                        UDPManagerRing(server->udpmanager), 
+                        UDPManagerID(server->udpmanager), 
+                        destID, destIP, destPort);
+    
+    }
   
   return 1;
 }
@@ -307,13 +364,9 @@ int ServerProcUIReq(Server * server, Request * request){
 	int count = RequestGetArgCount(request);/*Perhaps change this*/
 	if(strcmp(command,"join") == 0){		/*#Hashtag #switch #functions goes somewhere around here, instead of all this garbage*/
 		if(count == 3){
-			/*Send UDP BQRY x*/
-			/*if(BQRY == EMPTY)*/
-			/*RingManagerSetId(server->ringmanager, atoi(RequestGetArg(request, 2)));*/
+      
 			UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
-			/*UDPManagerReg(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));*/
-			/*else send(ID)*/
-			/*receive "SUCC" from succi*/
+      
 			return 0;
 		}else if(count == 6){
 			
