@@ -17,7 +17,7 @@ int UDPManagerRing(UDPManager * udpmanager){
 }
 
 int UDPManagerMsg(UDPManager * udpmanager, char * buffer){
-    return UDPSocketSend(udpmanager->fd, buffer, strlen(buffer), udpmanager->ip, udpmanager->port);
+    return UDPSocketSend(udpmanager->fd,  udpmanager->ip, strlen(buffer), buffer, udpmanager->port);
 }
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){

@@ -16,5 +16,5 @@ int UDPSocketSend(int fd, char * ip, int port, char * buffer, int n){
     addr.sin_port = htons(port);
     inet_pton(AF_INET, ip, &addr);
     
-    return sendto(fd, buffer, n, 0, (struct sockaddr*)&addr, sizeof(struct sockaddr));
+    return sendto(fd, buffer, n, 0, (struct sockaddr*)(&addr), sizeof(struct sockaddr_in));
 }
