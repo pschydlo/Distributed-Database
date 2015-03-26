@@ -65,11 +65,11 @@ Server * ServerInit(int argc, char ** argv, char * ip){
     server->TCPport     = 9000;
     server->udpmanager  = UDPManagerInit();
     server->tcpmanager  = TCPManagerInit();
+    server->ringmanager = RingManagerInit();
     
     ServerProcArg(server, argc, argv);
   
     strcpy(server->ip, ip);
-    server->ringmanager = RingManagerInit();
     
     return server;
 }

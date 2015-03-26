@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include "Request.h"
+#include "UDPSocket.h"
 
 typedef struct UDPManager UDPManager;
 

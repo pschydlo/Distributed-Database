@@ -17,7 +17,7 @@ int UDPManagerRing(UDPManager * udpmanager){
 }
 
 int UDPManagerMsg(UDPManager * udpmanager, char * buffer){
-    return sendto(udpmanager->fd, buffer, strlen(buffer), 0, (struct sockaddr*)udpmanager->addr, sizeof(struct sockaddr));
+    return UDPSocketSend(udpmanager->fd, buffer, strlen(buffer), udpmanager->ip, udpmanager->port);
 }
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){
@@ -67,22 +67,9 @@ int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
     return 0;
 }
 
-int UDPSocketCreate(){
-    int fd;
-    
-    if((fd=socket(AF_INET,SOCK_DGRAM,0)) == -1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
-    
-    return fd;
-}
-
 int UDPManagerStart(UDPManager * udpmanager){
     
     udpmanager->fd = UDPSocketCreate();
-    memset((void*)udpmanager->addr,(int)'\0',sizeof(struct sockaddr_in));
-    (udpmanager->addr->sin_family)=AF_INET;             /*Maybe encapsulate this code, like TCPSocket*/
-    udpmanager->addr->sin_port=htons(udpmanager->port);
-    inet_pton(AF_INET, udpmanager->ip, &(udpmanager->addr->sin_addr));
-    
     return 0;
 }
 
@@ -90,16 +77,12 @@ UDPManager * UDPManagerInit(){
     UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
     memset(udpmanager, 0, sizeof(UDPManager));
     
-    udpmanager->addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));    /*if you really want to, we can typedef this as sockaddr_in*/
-    memset(udpmanager->addr, 0, sizeof(struct sockaddr_in));
-    
     strcpy(udpmanager->ip, "193.136.138.142");  /*ip de tejo.tecnico.ulisboa.pt*/
     udpmanager->port = 58000;
     return udpmanager;
 }
 
 void UDPManagerStop ( UDPManager * udpmanager){
-    free(udpmanager->addr);
     close(udpmanager->fd);
     free(udpmanager);
 }
@@ -107,6 +90,7 @@ void UDPManagerStop ( UDPManager * udpmanager){
 int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
 
     int n = 0;
+    struct sockaddr_in addr;
     
     char buffer[128];
     
@@ -115,7 +99,7 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
     
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
-    n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)udpmanager->addr, &addrlen);
+    n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
     if(n == -1) exit(1);
     
     buffer[n] = '\n';

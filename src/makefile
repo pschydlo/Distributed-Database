@@ -1,8 +1,8 @@
 CC=gcc
 CFLAGS=-g -Wall -O1
-DEPS = Request.h TCPSocket.h TCPManager.h UDPManager.h RingManager.h UIManager.h server.h main.h 
+DEPS = Request.h UDPSocket.h TCPSocket.h TCPManager.h UDPManager.h RingManager.h UIManager.h server.h main.h 
 
-OBJ = Request.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o 
+OBJ = Request.o UDPSocket.o TCPSocket.o TCPManager.o UDPManager.o RingManager.o UIManager.o server.o main.o 
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
