@@ -19,6 +19,7 @@
 #define UI_SEND   692
 #define UI_EXIT   622
 #define UI_CHECK  1097
+#define UI_DEBUG  1133
 
 /* Ring Manager comand hashes */
 
@@ -46,6 +47,7 @@
 
 struct Server{
     int isBoot;
+    int debug;
     int shutdown;
     UDPManager  * udpmanager;
     TCPManager  * tcpmanager;
@@ -59,6 +61,7 @@ Server * ServerInit(int argc, char ** argv, char * ip){
     
     server->isBoot      = 0;
     server->shutdown    = 0;
+    server->debug       = 0;
     server->TCPport     = 9000;
     server->udpmanager  = UDPManagerInit();
     server->tcpmanager  = TCPManagerInit();
@@ -223,14 +226,15 @@ int ServerProcRingReq(Server * server, Request * request){
     if(argCount <= 0) return 0;
 
     
-    /* Debug Code */    
-    printf("Ring wrote: ");
-    int i = 0;
-    for(i = 0; i<RequestGetArgCount(request); i++){
-    printf("%s ", RequestGetArg(request, i));
-    fflush(stdout);
-    } 
-    printf("\n");
+    if(server->debug){  
+        printf("Ring wrote: ");
+        int i = 0;
+        for(i = 0; i<RequestGetArgCount(request); i++){
+            printf("%s ", RequestGetArg(request, i));
+            fflush(stdout);
+        } 
+        printf("\n");
+    }
     
     
     char * command = RequestGetArg(request,0);
@@ -312,16 +316,19 @@ int ServerProcRingReq(Server * server, Request * request){
 int ServerProcTCPReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
-
-    printf("External wrote: ");
-    int i = 0;
-    for(i = 0; i<RequestGetArgCount(request); i++){
-    printf("%s ", RequestGetArg(request, i));
-    fflush(stdout);
-    } 
-    printf("\n");
-    printf("To socket %d\n",RequestGetFD(request));
     
+    if(server->debug){
+        printf("External wrote: ");
+        int i = 0;
+        for(i = 0; i<RequestGetArgCount(request); i++){
+            printf("%s ", RequestGetArg(request, i));
+            fflush(stdout);
+        } 
+        printf("\n");
+        
+        printf("From socket %d.\n",RequestGetFD(request));
+    }
+        
     char * command = RequestGetArg(request,0);
     int code = hash(command);
     
@@ -408,10 +415,20 @@ int ServerProcTCPReq(Server * server, Request * request){
 /* Process UI Manager Requests */
 
 int ServerProcUIReq(Server * server, Request * request){
-    
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
+    if(server->debug){
+        printf("UI wrote: ");
+        int i = 0;
+        for(i = 0; i<RequestGetArgCount(request); i++){
+            printf("%s ", RequestGetArg(request, i));
+            fflush(stdout);
+        } 
+        printf("\n");
+        printf("From socket %d.\n",RequestGetFD(request));
+    }
+    
     char * command = RequestGetArg(request,0);
     int code = hash(command);
     
@@ -528,6 +545,22 @@ int ServerProcUIReq(Server * server, Request * request){
                 printf("No luck here");
             }
             
+            fflush(stdout);
+            break;
+        }
+        case(UI_DEBUG):
+        {
+            if( argCount < 2 ) break;
+            if( strcmp(RequestGetArg(request, 1), "off") == 0 ){
+                server->debug = 0;
+                
+                printf("Debug mode disabled.\n");
+                fflush(stdout);    
+                break;
+            }
+            server->debug = 1;
+            
+            printf("Debug mode enabled.\n");
             fflush(stdout);
             break;
         }

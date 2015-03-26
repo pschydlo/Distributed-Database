@@ -321,7 +321,6 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
         write(ringmanager->succi->fd, msg, strlen(msg));
     }
     
-    
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
     write(ringmanager->predi->fd, msg, strlen(msg));
 
