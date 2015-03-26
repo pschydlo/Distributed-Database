@@ -108,6 +108,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 		ringmanager->predi = (Peer*)malloc(sizeof(Peer));
 		memset(ringmanager->predi, 0, sizeof(Peer));
 		
+		ringmanager->predi->buffer[0] = '\0';
 		ringmanager->predi->bufferhead = 0;
 	}else{
 		char msg[50];
@@ -159,7 +160,6 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	
 	char msg[50];
 	sprintf(msg, "NEW %d %s %d\n", id, ringmanager->ip, ringmanager->TCPport);
-  
 	write(fd, msg, strlen(msg));
   
 	if(ringmanager->succi == NULL){
@@ -170,6 +170,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 	ringmanager->succi->fd = fd;
 	ringmanager->succi->id = succiID;
 	ringmanager->succi->bufferhead = 0;
+	ringmanager->succi->buffer[0] = '\0';
 	ringmanager->succi->ip = succiIP;
 	ringmanager->succi->port = succiPort;
 	
@@ -233,73 +234,42 @@ RingManager * RingManagerInit(char * ip, int TCPport){
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 	int n = 0;
 	int reqlength = 0;
-	
-	if(ringmanager->succi != NULL && FD_ISSET(ringmanager->succi->fd, rfds)){
-		n = send(ringmanager->succi->fd, " ", 1, MSG_NOSIGNAL);
-		if (n == -1)
-		{
-			FD_CLR(ringmanager->succi->fd, rfds);
-			
-			close(ringmanager->succi->fd);
-			free(ringmanager->succi);
-			ringmanager->succi = NULL;
-			
-			printf("Lost connection to succi.\n");
-			fflush(stdout);
-		}
-		
-	}
-		
-	n = 0;
-	
-	if(ringmanager->predi != NULL && FD_ISSET(ringmanager->predi->fd, rfds)){
-		n = send(ringmanager->predi->fd, " ", 1, MSG_NOSIGNAL);
-		if (n == -1)
-		{
-			FD_CLR(ringmanager->predi->fd, rfds);
-		
-			close(ringmanager->predi->fd);
-			free(ringmanager->predi);
-			ringmanager->predi = NULL;
-			
-			printf("Lost connection to predi.\n");
-			fflush(stdout);
-		}
-	}
-	
-	n = 0;
-    
+  
+	/* ------ Process buffers ------------ */
 	if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
-		strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
-		ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
+		memcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength, ringmanager->succi->bufferhead - reqlength);
+		
+		ringmanager->succi->bufferhead = ringmanager->succi->bufferhead - reqlength;
+		ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
 		return 1;
 	}
 	
 	if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
-		strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
-		ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
+		memcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength, ringmanager->predi->bufferhead - reqlength);
+		
+		ringmanager->predi->bufferhead = ringmanager->predi->bufferhead - reqlength;
+		ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
 		return 1;
 	}
 	
+	/* ----- Fill buffers ----------------*/
 	if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
 		FD_CLR(ringmanager->predi->fd, rfds);
 		
 		if((n=read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128))!=0){
-			if(n==-1)exit(1);				/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			
-			ringmanager->predi->buffer[ringmanager->predi->bufferhead + n] = '\0';
-			
-			/* Check if request is completely in buffer! (could happen that he only receives half \n */
-			reqlength = RequestParseString(request, ringmanager->predi->buffer);
-		  
-			if(reqlength == 0){
-				ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
-				return 0;
+			if( n <= 0 ) {
+				close(ringmanager->predi->fd);
+				free(ringmanager->predi);
+				ringmanager->predi = NULL;
+
+				printf("Lost connection to predi.\n");
+				fflush(stdout);
+				
+			}else{
+				ringmanager->predi->bufferhead += n;
+				ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
+				return 1;
 			}
-			
-		  strcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength);
-		  ringmanager->predi->bufferhead = strlen(ringmanager->predi->buffer);
-		  return 1;
 		}
 	}
 	
@@ -307,22 +277,19 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 		FD_CLR(ringmanager->succi->fd, rfds);
 		
 		if((n=read(ringmanager->succi->fd, ringmanager->succi->buffer + ringmanager->succi->bufferhead, 128))!=0){
-			if(n==-1)exit(1);/*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
-			
-			ringmanager->succi->buffer[ringmanager->succi->bufferhead + n] = '\0';
-      
-			/* Check if request is completely in buffer! (could happen that he only receives half \n */
-			reqlength = RequestParseString(request, ringmanager->succi->buffer);
-			if(reqlength == 0){
-				ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
-				return 0;
+			if( n==0 || n == -1 ) {
+				close(ringmanager->succi->fd);
+				free(ringmanager->succi);
+				ringmanager->succi = NULL;
+
+				printf("Lost connection to succi.\n");
+				fflush(stdout);
+				
+			}else{
+				ringmanager->succi->bufferhead += n;
+				ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
+				return 1;
 			}
-	
-			
-			strcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength);
-			ringmanager->succi->bufferhead = strlen(ringmanager->succi->buffer);
-  
-			return 1;
 		}
 	}
 	
