@@ -12,8 +12,8 @@ int main(int argc, char **argv){
     char ip[16];
 
     getIPAddr(ip);
-
-    printf("Our IP is now: %s\n\n", ip);
+	/*ProcArg(argc, argv); How will it return two ints and a string to give to ServerInit?*/
+    printf("Our IP is now: %s\n\n", ip);/*We need to make it exit from lack of ports before it asks IP, plz*/
 
     server = ServerInit(argc, argv, ip); /*Maybe process args in main, but looking good for now*/
 
@@ -51,3 +51,50 @@ void getIPAddr(char * ip){
     freeifaddrs(addrs);  
 }
 
+/*int ProcArg(int argc, char ** argv){
+    
+    char * ringPort = NULL;
+    char * bootIP   = NULL;
+    char * bootPort = NULL;
+    int i, opt;
+
+    opterr = 0;
+    while ((opt = getopt(argc, argv, "t:i:p:")) != -1){
+        switch (opt){
+            case 't':
+                ringPort = optarg;
+                break;
+            case 'i':
+                bootIP = optarg;
+                break;
+            case 'p':
+                bootPort = optarg;
+                break;
+            case '?':
+                if (optopt == 't')
+                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+                if (optopt == 'i')
+                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+                if (optopt == 'p')
+                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
+                else if(isprint(optopt))
+                    fprintf(stderr, "Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]\n", optopt);
+                else
+                    fprintf(stderr, "Caracter de opcao desconhecido '\\x%x'.\n", optopt);
+                return 0;
+            default:
+                return 0;
+        }
+  }
+  
+    printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
+
+    for (i = optind; i < argc; i++)
+        fprintf (stderr, "Argumento invalido %s\n", argv[i]);
+    
+    if(ringPort != NULL)    server->TCPport = atoi(ringPort);
+    if(bootIP   != NULL)    UDPManagerSetIP(server->udpmanager, bootIP);
+    if(bootPort != NULL)    UDPManagerSetPort(server->udpmanager, atoi(bootPort));
+
+    return 0;   
+}*/

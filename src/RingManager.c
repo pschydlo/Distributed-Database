@@ -126,23 +126,21 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         ringmanager->predi->id = id;
         ringmanager->predi->port = port;
         
-        printf("Connected to predi succesfully.\n");
+        printf("Connected to predi succesfully.\nring is %d\n",ringmanager->ring);
         fflush(stdout);
-  
+        
         if(ringmanager->succi == NULL){
-            RingManagerConnect(ringmanager, 1, ringmanager->id, id, ip, port);
+            RingManagerConnect(ringmanager, ringmanager->ring, ringmanager->id, id, ip, port);
         }
   
         return 1;
 }
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
-        
-    int n, fd = TCPSocketCreate();
-        
-    if(succiID == id){  /*Dude, what. We need to talk about this*/
-        close(ringmanager->predi->fd);  /*If someone tries to enter in an existing it just drops everything?*/
-        close(ringmanager->succi->fd);  /*I know this should never happen if the searches work properly, but still.*/
+
+    if(succiID == id){
+        close(ringmanager->predi->fd);
+        close(ringmanager->succi->fd);
         
         free(ringmanager->predi);
         free(ringmanager->succi);
@@ -152,6 +150,8 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
         
         return 0;
     }
+    
+    int n, fd = TCPSocketCreate();
     
     if((n = TCPSocketConnect(fd, succiIP, succiPort)) < 0) {
         printf("Could not connect to succi. Please try again later.\n");
@@ -305,22 +305,26 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 }
 
 void RingManagerLeave(RingManager * ringmanager, int isBoot){
+    char msg[50];
     
     ringmanager->id = -1;
     ringmanager->ring = -1;
     
-    if(!ringmanager->predi || !ringmanager->succi) return;
-
-    char msg[50];
-    
-    sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port); 
-    write(ringmanager->predi->fd, msg, strlen(msg));
+    if(ringmanager->predi == NULL && ringmanager->succi == NULL) return;
+    if(ringmanager->predi == NULL || ringmanager->succi == NULL){
+        printf("Something's fucky :( \n");/*Something broke in this case*/
+        exit(1);
+    }
     
     if(isBoot){
-        sprintf(msg,"BOOT");
+        sprintf(msg,"BOOT\n");
         write(ringmanager->succi->fd, msg, strlen(msg));
     }
     
+    
+    sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
+    write(ringmanager->predi->fd, msg, strlen(msg));
+
     close(ringmanager->predi->fd);
     close(ringmanager->succi->fd);
     

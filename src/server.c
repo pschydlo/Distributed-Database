@@ -251,7 +251,7 @@ int ServerProcRingReq(Server * server, Request * request){
             if(originID == RingManagerId(server->ringmanager)){
                 //Handle response 
         /*Simple printf if the UI asked for it?*/
-                printf("%d belongs to %d at %s %d", searchID, responsibleID, responsibleIP, responsiblePort);
+                printf("%d belongs to %d at %s %d\n", searchID, responsibleID, responsibleIP, responsiblePort);
                 fflush(stdout);
                 if(searchID == TCPManagerSearchID(server->tcpmanager)){
             /*Put SUCC sending into a function eventually*/     
@@ -267,13 +267,15 @@ int ServerProcRingReq(Server * server, Request * request){
         }
         case(RING_CON):
         {
-            if(RequestGetArgCount(request) != 4) return 0; 
-            
+            if(RequestGetArgCount(request) != 4) return 0;
+                        
             int id = RingManagerId(server->ringmanager);
             
             int    succiID   = atoi(RequestGetArg(request, 1));
             char * succiIP   = RequestGetArg(request, 2);
             int    succiPort = atoi(RequestGetArg(request, 3));
+            
+            if(succiID == id)
 
             RingManagerConnect(server->ringmanager, RingManagerRing(server->ringmanager), id, succiID, succiIP, succiPort);
             
@@ -437,7 +439,7 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_LEAVE):
         {
             if(server->isBoot){
-                if(RingManagerAlone(server->ringmanager)) UDPManagerRem(server->udpmanager); /*Done and done*/
+                if(RingManagerAlone(server->ringmanager)) UDPManagerRem(server->udpmanager);
                 else UDPManagerRegSucc(server->udpmanager, 
                                         RingManagerSuccID(server->ringmanager), 
                                         RingManagerSuccIP(server->ringmanager), 
@@ -450,6 +452,8 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_SHOW):
         {
             RingManagerStatus(server->ringmanager);
+            UDPManagerStatus(server->udpmanager);
+            printf("isBoot = %d\n", server->isBoot);
             break;
         }
         case(UI_RSP):
@@ -584,7 +588,6 @@ int ServerProcArg(Server * server, int argc, char ** argv){
         }
   }
   
-    printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
 
     for (i = optind; i < argc; i++)
         fprintf (stderr, "Argumento invalido %s\n", argv[i]);
@@ -592,6 +595,9 @@ int ServerProcArg(Server * server, int argc, char ** argv){
     if(ringPort != NULL)    server->TCPport = atoi(ringPort);
     if(bootIP   != NULL)    UDPManagerSetIP(server->udpmanager, bootIP);
     if(bootPort != NULL)    UDPManagerSetPort(server->udpmanager, atoi(bootPort));
+    
+    printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort); /*I would like to make it print defaults also, please
+																					* help me with that.*/
 
     return 0;   
 }

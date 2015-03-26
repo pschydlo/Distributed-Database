@@ -38,3 +38,5 @@ void UDPManagerStop ( UDPManager * udpmanager);
 UDPManager * UDPManagerInit();
 
 int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request);
+
+int UDPManagerStatus(UDPManager * udpmanager);

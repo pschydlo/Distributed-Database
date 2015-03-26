@@ -48,6 +48,8 @@ int UDPManagerReg(UDPManager * udpmanager, char * ip, int port){
 int UDPManagerRegSucc(UDPManager * udpmanager, int id, char * ip, int port){
     char buffer[128];
     sprintf(buffer, "REG %d %d %s %d", udpmanager->ring, id, ip, port);
+    printf("%s\n", buffer);
+    fflush(stdout);
     if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
     return 0;
 }
@@ -122,4 +124,9 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
     RequestParseString(request, buffer);
     
     return 1;
+}
+
+int UDPManagerStatus(UDPManager * udpmanager){
+    printf("Anel %i | Id %i\n", udpmanager->ring, udpmanager->id);
+    return 0;
 }
