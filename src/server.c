@@ -137,7 +137,10 @@ int ServerStop(Server * server){
 int ServerProcUDPReq(Server * server, Request * request){
 	
 	if(RequestGetArgCount(request) <= 0) return 0;
-	if(strcmp(RequestGetArg(request, 0), "OK") == 0) RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
+	if(strcmp(RequestGetArg(request, 0), "OK") == 0){
+    RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
+    server->isBoot = 1;
+  }
 	if(strcmp(RequestGetArg(request, 0), "NOK") == 0) printf("Problem with UDP\n");
 	if(strcmp(RequestGetArg(request, 0), "EMPTY") == 0) UDPManagerReg(server->udpmanager, server->ip, server->TCPport);
 	if(strcmp(RequestGetArg(request, 0), "BRSP") == 0){
@@ -211,9 +214,10 @@ int ServerProcRingReq(Server * server, Request * request){
 				//Handle response 
         /*Simple printf if the UI asked for it?*/
           if(searchID == TCPManagerSearchID(server->tcpmanager)){
-            /*Put SUCC sending into a function eventually*/		char msg[50];
+            /*Put SUCC sending into a function eventually*/		
+            char msg[50];
             sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
-            write(idfd, msg, strlen(msg));
+            write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
           }
 			}else{
 				RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
@@ -288,7 +292,7 @@ int ServerProcTCPReq(Server * server, Request * request){
 			
 			break;
 		}
-		case(TCP_CON):
+		case(TCP_CON):/*This case is not used in practice*/
 		{
 			int id   = RingManagerId(server->ringmanager);
 			int succiID    = atoi(RequestGetArg(request, 1));
@@ -301,19 +305,18 @@ int ServerProcTCPReq(Server * server, Request * request){
 		}
 		case(TCP_SUCC):
 		{
-			int destID = atoi(RequestGetArg(request, 1));
+			int destID      = atoi(RequestGetArg(request, 1));
 			char * destIP   = RequestGetArg(request, 2); 
 			int destPort    = atoi(RequestGetArg(request, 3)); 
+      
+			close(TCPManagerIDfd(server->tcpmanager));
+			TCPManagerSetSearch(server->tcpmanager, -1, -1);
 
 			if(UDPManagerID(server->udpmanager) == destID){
 				printf("ID %d already in use in ring, please select another\n", destID);
 				break;
-        close(UDPManagerID(server->udpmanager);
 			}
-			
-			close(TCPManagerIDfd(server->tcpmanager));
-			TCPManagerSetSearch(server->tcpmanager, -1, -1);
-			
+      
 			RingManagerConnect(server->ringmanager,
 							UDPManagerRing(server->udpmanager), 
 							UDPManagerID(server->udpmanager), 
@@ -327,8 +330,8 @@ int ServerProcTCPReq(Server * server, Request * request){
 			int id = RingManagerId(server->ringmanager);
 			if(RingManagerCheck(server->ringmanager, search)){
 				char msg[50];
-				sprintf(msg, "SUCC %d %s %d\n", UDPManagerID(server->udpmanager), server->ip, server->TCPport);
-				write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
+				sprintf(msg, "SUCC %d %s %d\n", id, server->ip, server->TCPport);
+				write(RequestGetFD(request), msg, strlen(msg));
 			}
 			else{
 				RingManagerQuery(server->ringmanager, id, search);
@@ -380,6 +383,11 @@ int ServerProcUIReq(Server * server, Request * request){
 			/* To do: Check if only one in ring, if so,
 			 * tell boot server to remove node. Else:
 			 * REG x succi to boot server and*/
+      if(RingManagerAlone(server->ringmanager)) UDPManagerRem(server->udpmanager); /*Done and done*/
+      else UDPManagerRegSucc(server->udpmanager, 
+                            RingManagerSuccID(server->ringmanager), 
+                            RingManagerSuccIP(server->ringmanager), 
+                            RingManagerSuccPort(server->ringmanager));
 			RingManagerLeave(server->ringmanager);
 			break;	
 		case(UI_SHOW):

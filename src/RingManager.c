@@ -20,6 +20,25 @@ struct RingManager{
 	char ip[16];
 };
 
+int RingManagerSuccID(RingManager * ringmanager){
+	if(ringmanager->succi != NULL) return ringmanager->succi->id;
+  return -1;
+}
+
+char * RingManagerSuccIP(RingManager * ringmanager){
+	if(ringmanager->succi != NULL) return ringmanager->succi->ip;
+  return "-1";
+}
+
+int RingManagerSuccPort(RingManager * ringmanager){
+	if(ringmanager->succi != NULL) return ringmanager->succi->port;
+  return -1;
+}
+
+int RingManagerAlone(RingManager * ringmanager){
+  return (ringmanager->predi == NULL && ringmanager->succi == NULL);
+}
+
 int RingManagerId(RingManager * ringmanager){
 	return ringmanager->id;
 }

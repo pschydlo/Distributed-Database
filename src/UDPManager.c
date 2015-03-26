@@ -45,6 +45,20 @@ int UDPManagerReg(UDPManager * udpmanager, char * ip, int port){
 	return 0;
 }
 
+int UDPManagerRegSucc(UDPManager * udpmanager, int id, char * ip, int port){
+	char buffer[128];
+	sprintf(buffer, "REG %d %d %s %d", udpmanager->ring, id, ip, port);
+	if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
+	return 0;
+}
+
+int UDPManagerRem(UDPManager * udpmanager){
+	char buffer[128];
+	sprintf(buffer, "UNR %d", udpmanager->ring);
+	if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
+	return 0;
+}
+
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
 	FD_SET(udpmanager->fd, rfds);
 	if(udpmanager->fd > *maxfd) *maxfd = udpmanager->fd;

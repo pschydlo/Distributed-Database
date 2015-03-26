@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -22,6 +22,10 @@ int UDPManagerSetIP(UDPManager * udpmanager, char * bootIP);
 int UDPManagerSetPort(UDPManager * udpmanager, int bootPort);
 
 int UDPManagerReg(UDPManager * udpmanager, char * ip, int port);
+
+int UDPManagerRegSucc(UDPManager * udpmanager, int id, char * ip, int port);
+
+int UDPManagerRem(UDPManager * udpmanager);
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
 
