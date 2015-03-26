@@ -16,6 +16,7 @@ int RingManagerSuccPort(RingManager * ringmanager);
 
 int RingManagerAlone(RingManager * ringmanager);
 int RingManagerId(RingManager * ringmanager);
+int RingManagerRing(RingManager * ringmanager);
 int RingManagerSetRing(RingManager * ringmanager, int ring, int id);
 
 int d(int k, int l);
@@ -28,16 +29,17 @@ int RingManagerStatus(RingManager * ringmanager);
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * ip, int port);
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port);
-void RingManagerLeave(RingManager * ringmanager);
+void RingManagerLeave(RingManager * ringmanager, int isBoot);
 
 int RingManagerArm(RingManager * ringmanager, fd_set * rfds, int * maxfd);
 
 void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID );
 void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port);
 
-RingManager * RingManagerInit(char * ip, int TCPport);
+int RingManagerStart(RingManager * ringmanager, char * ip, int TCPport);
+RingManager * RingManagerInit();
 
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request);
 
 int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes);
-void RingManagerStop ( RingManager * ringmanager);
+void RingManagerStop ( RingManager * ringmanager, int isBoot);

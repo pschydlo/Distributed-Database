@@ -65,12 +65,19 @@ int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
     return 0;
 }
 
-int UDPManagerCreate(UDPManager * udpmanager){
+int UDPSocketCreate(){
+    int fd;
     
-    udpmanager->fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(udpmanager->fd == -1) exit(1);
+    if((fd=socket(AF_INET,SOCK_DGRAM,0)) == -1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
+    
+    return fd;
+}
+
+int UDPManagerStart(UDPManager * udpmanager){
+    
+    udpmanager->fd = UDPSocketCreate();
     memset((void*)udpmanager->addr,(int)'\0',sizeof(struct sockaddr_in));
-    (udpmanager->addr->sin_family)=AF_INET;
+    (udpmanager->addr->sin_family)=AF_INET;             /*Maybe encapsulate this code, like TCPSocket*/
     udpmanager->addr->sin_port=htons(udpmanager->port);
     inet_pton(AF_INET, udpmanager->ip, &(udpmanager->addr->sin_addr));
     

@@ -33,7 +33,7 @@ int TCPSocketBind(int fd, int port){
 int TCPSocketCreate(){
     int fd;
     
-    if((fd=socket(AF_INET,SOCK_STREAM,0))==-1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
+    if((fd=socket(AF_INET,SOCK_STREAM,0)) == -1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
     
     return fd;
 }

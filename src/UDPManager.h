@@ -29,7 +29,9 @@ int UDPManagerRem(UDPManager * udpmanager);
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
 
-int UDPManagerCreate(UDPManager * udpmanager);
+int UDPSocketCreate();
+
+int UDPManagerStart(UDPManager * udpmanager);
 
 void UDPManagerStop ( UDPManager * udpmanager);
 

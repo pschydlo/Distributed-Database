@@ -43,6 +43,10 @@ int RingManagerId(RingManager * ringmanager){
     return ringmanager->id;
 }
 
+int RingManagerRing(RingManager * ringmanager){
+    return ringmanager->ring;
+}
+
 int RingManagerSetRing(RingManager * ringmanager, int ring, int id){
     ringmanager->ring = ring;
     ringmanager->id = id;
@@ -136,9 +140,9 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
         
     int n, fd = TCPSocketCreate();
         
-    if(succiID == id){
-        close(ringmanager->predi->fd);
-        close(ringmanager->succi->fd);
+    if(succiID == id){  /*Dude, what. We need to talk about this*/
+        close(ringmanager->predi->fd);  /*If someone tries to enter in an existing it just drops everything?*/
+        close(ringmanager->succi->fd);  /*I know this should never happen if the searches work properly, but still.*/
         
         free(ringmanager->predi);
         free(ringmanager->succi);
@@ -213,9 +217,15 @@ int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes)
 
     return 1;
 }
-        
-RingManager * RingManagerInit(char * ip, int TCPport){
-        
+
+int RingManagerStart(RingManager * ringmanager, char * ip, int TCPport){
+    strcpy(ringmanager->ip, ip);
+    ringmanager->TCPport = TCPport;
+    return 0;
+    }
+
+RingManager * RingManagerInit(){
+
     RingManager * ringmanager;
 
     ringmanager = (RingManager*)malloc(sizeof(RingManager));
@@ -223,10 +233,8 @@ RingManager * RingManagerInit(char * ip, int TCPport){
     
     ringmanager->succi = NULL;
     ringmanager->predi = NULL;
-    ringmanager->id    = -1;                
-    ringmanager->ring  = -1;                
-    strcpy(ringmanager->ip, ip);
-    ringmanager->TCPport = TCPport;
+    ringmanager->id    = -1;
+    ringmanager->ring  = -1;
     
     return ringmanager;
 }
@@ -296,13 +304,22 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
     return 0;
 }
 
-void RingManagerLeave(RingManager * ringmanager){
+void RingManagerLeave(RingManager * ringmanager, int isBoot){
+    
+    ringmanager->id = -1;
+    ringmanager->ring = -1;
+    
     if(!ringmanager->predi || !ringmanager->succi) return;
 
     char msg[50];
+    
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port); 
-        
     write(ringmanager->predi->fd, msg, strlen(msg));
+    
+    if(isBoot){
+        sprintf(msg,"BOOT");
+        write(ringmanager->succi->fd, msg, strlen(msg));
+    }
     
     close(ringmanager->predi->fd);
     close(ringmanager->succi->fd);
@@ -313,15 +330,12 @@ void RingManagerLeave(RingManager * ringmanager){
     ringmanager->predi = NULL;
     ringmanager->succi = NULL;
     
-    ringmanager->id = -1;
-    ringmanager->ring = -1;
-    
     printf("Sucessfully left ring.\n");
     fflush(stdout);
 };
 
-void RingManagerStop ( RingManager * ringmanager){
-    RingManagerLeave(ringmanager);
+void RingManagerStop ( RingManager * ringmanager, int isBoot){
+    RingManagerLeave(ringmanager, isBoot);
     
     if(ringmanager->predi != NULL) free(ringmanager->predi);
     if(ringmanager->succi != NULL) free(ringmanager->succi);
