@@ -7,7 +7,7 @@ struct Peer{
     int id, fd;
     char buffer[128];
     int bufferhead;
-    char * ip;
+    char ip[16];
     int port;
 };
 
@@ -139,6 +139,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
     if(succiID == id){
+        puts("Yes, I am the last vertex, yes");
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
         
@@ -175,7 +176,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
     ringmanager->succi->id = succiID;
     ringmanager->succi->bufferhead = 0;
     ringmanager->succi->buffer[0] = '\0';
-    ringmanager->succi->ip = succiIP;
+    strcpy(ringmanager->succi->ip, succiIP);
     ringmanager->succi->port = succiPort;
     
     printf("Connected to succi succesfully.\n");
@@ -321,7 +322,10 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
         write(ringmanager->succi->fd, msg, strlen(msg));
     }
     
+    
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
+    printf("%s\n", msg);
+    fflush(stdout);
     write(ringmanager->predi->fd, msg, strlen(msg));
 
     close(ringmanager->predi->fd);
