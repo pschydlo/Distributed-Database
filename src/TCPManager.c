@@ -6,6 +6,7 @@ struct TCPManager{
     int pfd, idfd;
     int searchid;
     int sockets[MAX_CON];
+    RoutingTable * localRouting;
     /*Buffer *buffer;*/
 };
 
@@ -27,6 +28,8 @@ TCPManager * TCPManagerInit(){
     int i = 0;
     TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));
     memset(tcpmanager, 0, sizeof(TCPManager));
+    
+    tcpmanager->localRouting = RoutingTableCreate(64);
     
     for(i=0; i < MAX_CON; i++){
         tcpmanager->sockets[i] = -1;

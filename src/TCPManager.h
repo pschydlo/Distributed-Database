@@ -4,9 +4,11 @@
 #include "Buffer.h"
 #include "Request.h"
 #include "TCPSocket.h"
+#include "RoutingTable.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+
 
 typedef struct TCPManager TCPManager;
 

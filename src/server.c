@@ -77,9 +77,6 @@ Server * ServerInit(){
     
     server->udpmanager  = UDPManagerInit();
     
-    UDPManagerSetIP(server->udpmanager, "127.0.0.1");
-    UDPManagerSetPort(server->udpmanager, 58000);
-    
     server->tcpmanager  = TCPManagerInit();
     server->ringmanager = RingManagerInit();
     server->routingtable= RoutingTableCreate(64);
@@ -654,8 +651,8 @@ int hash(char *str){
 }
 
 void ServerSetBootServer(Server * server, char * ip, int port){
-    UDPManagerSetIP(server->udpmanager, ip);
-    UDPManagerSetPort(server->udpmanager, port);
+    if (ip != NULL) UDPManagerSetIP(server->udpmanager, ip);
+    if (port) UDPManagerSetPort(server->udpmanager, port);
     
     return;
 }

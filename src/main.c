@@ -14,7 +14,7 @@ int main(int argc, char **argv){
 
     /* Configure and start server*/
     server = ServerInit();
-    ServerSetBootServer(server, config->bootServerIP, config->bootServerPort);
+    //ServerSetBootServer(server, config->bootServerIP, config->bootServerPort);
     ServerStart(server, config->extIP, config->extPort);
     
     /* Free memory */
