@@ -99,7 +99,7 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
     
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
-    n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)(&addr), &addrlen);
     if(n == -1) exit(1);
     
     buffer[n] = '\n';
