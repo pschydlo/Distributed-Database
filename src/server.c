@@ -426,21 +426,30 @@ int ServerProcTCPReq(Server * server, Request * request){
         case(TCP_ID):
         {
             if(RequestGetArgCount(request) != 2) break;
-            int search = atoi(RequestGetArg(request, 1));
-            int id = RingManagerId(server->ringmanager);
-            if(RingManagerCheck(server->ringmanager, search)){
-                puts("Trying to tell external to SUCC me off");
+            
+            int searchID = atoi(RequestGetArg(request, 1));
+            int nodeID   = RingManagerId(server->ringmanager);
+            
+            if(RingManagerCheck(server->ringmanager, searchID)){ 
                 char msg[50];
-                sprintf(msg, "SUCC %d %s %d\n", id, server->ip, server->TCPport);
-                printf("%sto fd %d\n",msg, RequestGetFD(request));
-                fflush(stdout);
+                sprintf(msg, "SUCC %d %s %d\n", nodeID, server->ip, server->TCPport);
                 write(RequestGetFD(request), msg, strlen(msg));
+                
+                if(server->debug){
+                    printf("Trying to tell external to SUCC me off\n");
+                    printf("%sto fd %d\n", msg, RequestGetFD(request));
+                    fflush(stdout);
+                }
             }
             else{
-                puts("Will look for someone to SUCC external off");
-                RingManagerQuery(server->ringmanager, id, search);
-                TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), search);
-                RoutingTablePush(server->routingtable, id, TCP);
+                RingManagerQuery(server->ringmanager, nodeID, searchID);
+                TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), searchID);
+                RoutingTablePush(server->routingtable, searchID, TCP);
+            
+                if(server->debug){
+                    printf("Will look for someone to SUCC external off\n");
+                    fflush(stdout);
+                }
             }
         }
         

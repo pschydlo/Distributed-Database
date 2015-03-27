@@ -265,40 +265,37 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
     if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
         FD_CLR(ringmanager->predi->fd, rfds);
         
-        if((n=read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128))!=0){
-            if( n <= 0 ) {
-                close(ringmanager->predi->fd);
-                free(ringmanager->predi);
-                ringmanager->predi = NULL;
+        n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
+        
+        if( n <= 0 ) {
+            close(ringmanager->predi->fd);
+            free(ringmanager->predi);
+            ringmanager->predi = NULL;
 
-                printf("Lost connection to predi.\n");
-                fflush(stdout);
-
-            }else{
-                ringmanager->predi->bufferhead += n;
-                ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
-                return 1;
-            }
+            printf("Lost connection to predi.\n");
+            fflush(stdout);
+        }else{
+            ringmanager->predi->bufferhead += n;
+            ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
+            return 1;
         }
     }
     
     if(ringmanager->succi!=NULL && FD_ISSET(ringmanager->succi->fd,rfds)){
         FD_CLR(ringmanager->succi->fd, rfds);
         
-        if((n=read(ringmanager->succi->fd, ringmanager->succi->buffer + ringmanager->succi->bufferhead, 128))!=0){
-            if( n==0 || n == -1 ) {
-                close(ringmanager->succi->fd);
-                free(ringmanager->succi);
-                ringmanager->succi = NULL;
+        n = read(ringmanager->succi->fd, ringmanager->succi->buffer + ringmanager->succi->bufferhead, 128);
+        if( n <= 0 ) {
+            close(ringmanager->succi->fd);
+            free(ringmanager->succi);
+            ringmanager->succi = NULL;
 
-                printf("Lost connection to succi.\n");
-                fflush(stdout);
-                    
-            }else{
-                ringmanager->succi->bufferhead += n;
-                ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
-                return 1;
-            }
+            printf("Lost connection to succi.\n");
+            fflush(stdout);
+        }else{
+            ringmanager->succi->bufferhead += n;
+            ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
+            return 1;
         }
     }
     
