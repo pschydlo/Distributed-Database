@@ -7,6 +7,7 @@ struct Entry{
 
 struct RoutingTable{
     Entry ** entries;
+    int size;
 };
 
 RoutingTable * RoutingTableCreate(int size){
@@ -19,6 +20,8 @@ RoutingTable * RoutingTableCreate(int size){
         routingtable->entries[i]->last = 0;
     };
     
+    routingtable->size = size;
+    
     return routingtable;
 };
 
@@ -28,8 +31,17 @@ void RoutingTablePush(RoutingTable * routingtable, int key, int value){
 };
 
 int RoutingTablePop(RoutingTable * routingtable, int key){
+    if(routingtable->entries[key]->last == 0) return -1;
     return (routingtable->entries[key]->values[(routingtable->entries[key])->last--]);
 };
 
 void RoutingTableDestroy(RoutingTable * routingtable){
+    int i = 0;
+    
+    for(i = 0; i < routingtable->size; i++){
+        free(routingtable->entries[i]);
+    };
+             
+    free(routingtable->entries);
+    free(routingtable);         
 };

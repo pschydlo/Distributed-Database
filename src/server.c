@@ -2,6 +2,13 @@
 
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
+/*--------- Start Interface Codes ---------- */
+
+#define UI   0
+#define TCP  1
+#define UDP  2
+#define RING 3
+
 /*--------- Start Switching Codes ---------- */
 
 /* UI Manager comand hashes */
@@ -20,6 +27,9 @@
 #define UI_EXIT   622
 #define UI_CHECK  1097
 #define UI_DEBUG  1133
+#define UI_PUSH   730
+#define UI_POP    366
+#define UI_STATUS 2913
 
 /* Ring Manager comand hashes */
 
@@ -49,11 +59,13 @@ struct Server{
     int isBoot;
     int debug;
     int shutdown;
+    int TCPport;
+    char ip[16];
+    
+    RoutingTable * routingtable;
     UDPManager  * udpmanager;
     TCPManager  * tcpmanager;
     RingManager * ringmanager;
-    char ip[16];
-    int  TCPport;
 };
 
 Server * ServerInit(int argc, char ** argv, char * ip){
@@ -63,13 +75,14 @@ Server * ServerInit(int argc, char ** argv, char * ip){
     server->shutdown    = 0;
     server->debug       = 0;
     server->TCPport     = 9000;
+    strcpy(server->ip, ip);
+    
     server->udpmanager  = UDPManagerInit();
     server->tcpmanager  = TCPManagerInit();
     server->ringmanager = RingManagerInit();
+    server->routingtable= RoutingTableCreate(64);
     
     ServerProcArg(server, argc, argv);
-  
-    strcpy(server->ip, ip);
     
     return server;
 }
@@ -141,6 +154,7 @@ int ServerStop(Server * server){
     UDPManagerStop(server->udpmanager);
     TCPManagerStop(server->tcpmanager);
     RingManagerStop(server->ringmanager, server->isBoot);
+    RoutingTableDestroy(server->routingtable);
     free(server);
  
     return 0;
@@ -259,21 +273,37 @@ int ServerProcRingReq(Server * server, Request * request){
             char * responsibleIP    = RequestGetArg(request, 4);
             int    responsiblePort  = atoi(RequestGetArg(request, 5));
 
-            if(originID == RingManagerId(server->ringmanager)){
-                //Handle response 
-        /*Simple printf if the UI asked for it?*/
-                printf("%d belongs to %d at %s %d\n", searchID, responsibleID, responsibleIP, responsiblePort);
-                fflush(stdout);
-                if(searchID == TCPManagerSearchID(server->tcpmanager)){
-            /*Put SUCC sending into a function eventually*/     
-                char msg[50];
-                sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
-                write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
-                }
-            }else{
+            if(originID != RingManagerId(server->ringmanager)){
                 RingManagerRsp(server->ringmanager, originID, searchID, responsibleID, responsibleIP, responsiblePort);
+                break;
             }
+                
+            /*------ Handle response -----*/ 
+            int interfaceID;
             
+            while((interfaceID = RoutingTablePop(server->routingtable, searchID)) != -1){
+                
+                if(server->debug){
+                    printf("RoutingTable: Handling response to interface %d", interfaceID); 
+                    fflush(stdout);
+                }
+
+                switch(interfaceID){
+                    case(UI):
+                    {
+                        printf("%d belongs to %d at %s %d\n", searchID, responsibleID, responsibleIP, responsiblePort);
+                        fflush(stdout);
+                        break;
+                    }
+                    case(TCP):
+                    {
+                        char msg[50];
+                        sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
+                        write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
+                        break;
+                    }
+                }
+            }
             break;
         }
         case(RING_CON):
@@ -410,6 +440,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                 puts("Will look for someone to SUCC external off");
                 RingManagerQuery(server->ringmanager, id, search);
                 TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), search);
+                RoutingTablePush(server->routingtable, id, TCP);
             }
         }
         
@@ -475,9 +506,18 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_SHOW):
         {
             RingManagerStatus(server->ringmanager);
-            UDPManagerStatus(server->udpmanager);
-            printf("isBoot = %d\n", server->isBoot);
             break;
+        }
+        case(UI_STATUS):
+        {
+            printf("Ring Manager:\n");
+            RingManagerStatus(server->ringmanager);
+            printf("UDP Manager:\n");
+            UDPManagerStatus(server->udpmanager);
+            printf("Boot Status:\n");
+            printf("isBoot = %d\n", server->isBoot);
+            fflush(stdout);
+            break;    
         }
         case(UI_RSP):
         {
@@ -489,13 +529,14 @@ int ServerProcUIReq(Server * server, Request * request){
             /*Reminder: limit commands if user is not connect to ring*/
             if(RequestGetArgCount(request) < 2) return 0;
 
-            int search  = atoi(RequestGetArg(request, 1));
-            int id      = RingManagerId(server->ringmanager);
+            int searchID  = atoi(RequestGetArg(request, 1));
+            int nodeID    = RingManagerId(server->ringmanager);
 
-            if( RingManagerCheck(server->ringmanager, search) ){
-                printf("Yey, don't have to go far: %i, ip, port\n", id); /*Add variables for ip and port eventually*/
+            if( RingManagerCheck(server->ringmanager, searchID) ){
+                printf("Yey, don't have to go far: %i, ip, port\n", nodeID); /*Add variables for ip and port eventually*/
             } else {
-                RingManagerQuery(server->ringmanager, id, search); /*Add int->string support eventually*/
+                RingManagerQuery(server->ringmanager, nodeID, searchID); /*Add int->string support eventually*/
+                RoutingTablePush(server->routingtable, searchID, UI);
             }
             break;
         }
