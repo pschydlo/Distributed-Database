@@ -167,8 +167,13 @@ int ServerProcUDPReq(Server * server, Request * request){
     switch(code){
         case(UDP_OK):
         {
-            RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
-            server->isBoot = 1;
+            if(RingManagerRing(server->ringmanager) == -1){
+                RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
+                server->isBoot = 1;
+            }else{
+                RingManagerLeave(server->ringmanager, server->isBoot);
+                server->isBoot = 0;
+            }
             break;
         }
         case(UDP_NOK):
@@ -220,6 +225,8 @@ int ServerProcUDPReq(Server * server, Request * request){
 }
 
 /* Process Ring Manager Requests */
+
+/*DONT FORGET ABOUT ROUTE HANDLING, IF UI OR IF EXTERNAL*/
 
 int ServerProcRingReq(Server * server, Request * request){  
     int argCount = RequestGetArgCount(request);
@@ -279,7 +286,8 @@ int ServerProcRingReq(Server * server, Request * request){
             char * succiIP   = RequestGetArg(request, 2);
             int    succiPort = atoi(RequestGetArg(request, 3));
             
-            if(succiID == id)
+            puts("received a CON");
+            if(succiID == id) puts("I am alone");
 
             RingManagerConnect(server->ringmanager, RingManagerRing(server->ringmanager), id, succiID, succiIP, succiPort);
             
@@ -455,15 +463,13 @@ int ServerProcUIReq(Server * server, Request * request){
         }
         case(UI_LEAVE):
         {
-            if(server->isBoot){
+            if(server->isBoot){ /*Put this in a function and place also after serverstart while loop*/
                 if(RingManagerAlone(server->ringmanager)) UDPManagerRem(server->udpmanager);
                 else UDPManagerRegSucc(server->udpmanager, 
                                         RingManagerSuccID(server->ringmanager), 
                                         RingManagerSuccIP(server->ringmanager), 
                                         RingManagerSuccPort(server->ringmanager));
-            }
-            RingManagerLeave(server->ringmanager, server->isBoot);
-            server->isBoot = 0;
+            }else RingManagerLeave(server->ringmanager, server->isBoot);
             break;
         }
         case(UI_SHOW):
