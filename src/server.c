@@ -27,8 +27,6 @@
 #define UI_EXIT   622
 #define UI_CHECK  1097
 #define UI_DEBUG  1133
-#define UI_PUSH   730
-#define UI_POP    366
 #define UI_STATUS 2913
 
 /* Ring Manager comand hashes */
@@ -68,38 +66,47 @@ struct Server{
     RingManager * ringmanager;
 };
 
-Server * ServerInit(int argc, char ** argv, char * ip){
+Server * ServerInit(){
     Server * server=(Server*)malloc(sizeof(Server));
     
+    /* -- Default configs -- */
     server->isBoot      = 0;
     server->shutdown    = 0;
     server->debug       = 0;
     server->TCPport     = 9000;
-    strcpy(server->ip, ip);
     
     server->udpmanager  = UDPManagerInit();
+    
+    UDPManagerSetIP(server->udpmanager, "127.0.0.1");
+    UDPManagerSetPort(server->udpmanager, 58000);
+    
     server->tcpmanager  = TCPManagerInit();
     server->ringmanager = RingManagerInit();
     server->routingtable= RoutingTableCreate(64);
     
-    ServerProcArg(server, argc, argv);
+    //ServerProcArg(server, argc, argv);
     
     return server;
 }
 
-int ServerStart(Server * server){
+int ServerStart(Server * server, char * ip, int port){
     
+    /* Initial setup */
     int maxfd, counter;
     fd_set rfds;
     int n = 0;
-  
+    strcpy(server->ip, ip);
+    server->TCPport  = port;
+    
     Request *request = RequestCreate();
     RequestReset(request);
     
+    /* Start interfaces */
     RingManagerStart(server->ringmanager, server->ip, server->TCPport);
     TCPManagerStart(server->tcpmanager, server->TCPport);
     UDPManagerStart(server->udpmanager);
     
+    /* Event Loop */
     while(!(server->shutdown)){
         
         FD_ZERO(&rfds); maxfd=0;
@@ -148,7 +155,7 @@ int ServerStart(Server * server){
     return 0;
 }
 
-int ServerStop(Server * server){
+int ServerDestroy(Server * server){
     /*To do: close all active fd's*/
     
     UDPManagerStop(server->udpmanager);
@@ -165,14 +172,15 @@ int ServerProcUDPReq(Server * server, Request * request){
     if(argCount <= 0) return 0;
 
     
-    /* Debug Code */    
-    printf("UDP wrote: ");
-    int i = 0;
-  for(i = 0; i<RequestGetArgCount(request); i++){
-    printf("%s ", RequestGetArg(request, i));
-    fflush(stdout);
-    } 
-    printf("\n");
+    if(server->debug){
+        printf("UDP wrote: ");
+        int i = 0;
+        for(i = 0; i<RequestGetArgCount(request); i++){
+            printf("%s ", RequestGetArg(request, i));
+            fflush(stdout);
+        } 
+        printf("\n");
+    };
     
     
     char * command = RequestGetArg(request,0);
@@ -250,7 +258,7 @@ int ServerProcRingReq(Server * server, Request * request){
     if(server->debug){  
         printf("Ring wrote: ");
         int i = 0;
-        for(i = 0; i<RequestGetArgCount(request); i++){
+        for(i = 0; i < RequestGetArgCount(request); i++){
             printf("%s ", RequestGetArg(request, i));
             fflush(stdout);
         } 
@@ -355,6 +363,7 @@ int ServerProcTCPReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
     
+    
     if(server->debug){
         printf("External wrote: ");
         int i = 0;
@@ -366,6 +375,7 @@ int ServerProcTCPReq(Server * server, Request * request){
         
         printf("From socket %d.\n",RequestGetFD(request));
     }
+    
         
     char * command = RequestGetArg(request,0);
     int code = hash(command);
@@ -466,6 +476,7 @@ int ServerProcUIReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
+    
     if(server->debug){
         printf("UI wrote: ");
         int i = 0;
@@ -476,6 +487,7 @@ int ServerProcUIReq(Server * server, Request * request){
         printf("\n");
         printf("From socket %d.\n",RequestGetFD(request));
     }
+    
     
     char * command = RequestGetArg(request,0);
     int code = hash(command);
@@ -641,52 +653,9 @@ int hash(char *str){
     return h;
 }
 
-int ServerProcArg(Server * server, int argc, char ** argv){
+void ServerSetBootServer(Server * server, char * ip, int port){
+    UDPManagerSetIP(server->udpmanager, ip);
+    UDPManagerSetPort(server->udpmanager, port);
     
-    char * ringPort = NULL;
-    char * bootIP   = NULL;
-    char * bootPort = NULL;
-    int i, opt;
-
-    opterr = 0;
-    while ((opt = getopt(argc, argv, "t:i:p:")) != -1){
-        switch (opt){                   /*I'm sure you can probably clean up this switch somehow, i'll leave that to you*/
-            case 't':
-                ringPort = optarg;
-                break;
-            case 'i':
-                bootIP = optarg;
-                break;
-            case 'p':
-                bootPort = optarg;
-                break;
-            case '?':
-                if (optopt == 't')
-                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-                if (optopt == 'i')
-                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-                if (optopt == 'p')
-                    fprintf(stderr, "Opcao -%c requer argumento.\n", optopt);
-                else if(isprint(optopt))
-                    fprintf(stderr, "Opcao desconhecida '-%c'. Sintaxe: ddt [-t ringport] [-i bootIP] [-p bootport]\n", optopt);
-                else
-                    fprintf(stderr, "Caracter de opcao desconhecido '\\x%x'.\n", optopt);
-                return 0;
-            default:
-                return 0;
-        }
-  }
-  
-
-    for (i = optind; i < argc; i++)
-        fprintf (stderr, "Argumento invalido %s\n", argv[i]);
-    
-    if(ringPort != NULL)    server->TCPport = atoi(ringPort);
-    if(bootIP   != NULL)    UDPManagerSetIP(server->udpmanager, bootIP);
-    if(bootPort != NULL)    UDPManagerSetPort(server->udpmanager, atoi(bootPort));
-    
-    printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort); /*I would like to make it print defaults also, please
-																					* help me with that.*/
-
-    return 0;   
+    return;
 }
