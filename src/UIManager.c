@@ -1,19 +1,5 @@
 #include "UIManager.h"
 
-int UIManagerParse(Request * request, char * buffer){
-    int n, start = 0;
-    RequestReset(request);
-    
-    for(n = 0; buffer[n] != '\0'; n++){
-        if(buffer[n] != ' ' && buffer[n]!= '\n') continue;
-        
-        RequestPushArg(request, buffer + start, n - start);
-        start = n + 1;
-    }
-    
-    return 0;
-}
-
 int UIManagerArm(fd_set *rfds, int * maxfd){
     
     FD_SET(0, rfds);
@@ -32,7 +18,8 @@ int UIManagerReq(fd_set *rfds, Request * request){ /*Maybe fix to read pipelined
     if(n == -1) exit(1);                /*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
         
     buffer[n]='\0';
-    UIManagerParse(request, buffer);
+    RequestParseString(request, buffer);
+    RequestAddFD(request, 0);
     
     return 1;
 }

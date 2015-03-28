@@ -11,6 +11,10 @@
 
 typedef struct UDPManager UDPManager;
 
+int UDPManagerSetTCPfd(UDPManager * udpmanager, int tcpfd);
+
+int UDPManagerTCPfd(UDPManager * udpmanager);
+
 int UDPManagerID(UDPManager * udpmanager);
 
 int UDPManagerRing(UDPManager * udpmanager);
@@ -31,13 +35,11 @@ int UDPManagerRem(UDPManager * udpmanager);
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd );
 
-int UDPSocketCreate();
-
 int UDPManagerStart(UDPManager * udpmanager);
 
-void UDPManagerStop ( UDPManager * udpmanager);
+void UDPManagerStop ( UDPManager * udpmanager );
 
-UDPManager * UDPManagerInit();
+UDPManager * UDPManagerCreate();
 
 int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request);
 

@@ -1,30 +1,14 @@
 #include "TCPManager.h"
 
-#define MAX_CON 2
+#define MAX_CON 100
 
 struct TCPManager{
-    int pfd, idfd;
-    int searchid;
+    int pfd;
     int sockets[MAX_CON];
     RoutingTable * localRouting;
-    /*Buffer *buffer;*/
 };
 
-int TCPManagerIDfd(TCPManager * tcpmanager){
-    return tcpmanager->idfd;
-}
-
-int TCPManagerSearchID(TCPManager * tcpmanager){
-    return tcpmanager->searchid;
-}
-
-int TCPManagerSetSearch(TCPManager * tcpmanager, int idfd, int searchid){ /*We can probably fit this in another module I can't quite visualise now*/
-    tcpmanager->idfd      = idfd;
-    tcpmanager->searchid  = searchid;
-    return 0;
-}
-
-TCPManager * TCPManagerInit(){
+TCPManager * TCPManagerCreate(){
     int i = 0;
     TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));
     memset(tcpmanager, 0, sizeof(TCPManager));
@@ -34,7 +18,6 @@ TCPManager * TCPManagerInit(){
     for(i=0; i < MAX_CON; i++){
         tcpmanager->sockets[i] = -1;
     }
-    tcpmanager->idfd = -1;
     
     return tcpmanager;
 }
@@ -44,17 +27,19 @@ int TCPManagerStart(TCPManager * tcpmanager, int * TCPport){
     char opt;
     
     while((pfd = TCPSocketCreate()) == -1){
-        scanf("SocketCreate failed. Try again? [Y/n] %c", &opt);
+        printf("SocketCreate failed. Try again? [Y/n] ");
+        scanf("%c", &opt);
         if(opt != 'Y' && opt != 'y') exit(1);
     }
     
     while(TCPSocketBind(pfd, *TCPport) == -1){
         printf("Choose another port: ");
-        scanf("Text %d", TCPport);
+        scanf("%d", TCPport);
     }
     
     while(TCPSocketListen(pfd) == -1){
-        scanf("TCPSocketListen failed. Try again? [Y/n] %c", &opt);
+        printf("TCPSocketListen failed. Try again? [Y/n] ");
+        scanf("%c", &opt);
         if(opt != 'Y' && opt != 'y') exit(1);
     }
     
@@ -64,9 +49,6 @@ int TCPManagerStart(TCPManager * tcpmanager, int * TCPport){
 }
 
 int TCPManagerArm( TCPManager * tcpmanager, fd_set * rfds, int * maxfd ){
-
-    if(tcpmanager->idfd != -1) FD_SET(tcpmanager->idfd, rfds);      /*temp id socket for outgoing ID asking*/
-    if(tcpmanager->idfd > *maxfd) *maxfd = tcpmanager->idfd;
     
     FD_SET(tcpmanager->pfd, rfds);
     if(tcpmanager->pfd > *maxfd) *maxfd = tcpmanager->pfd;
@@ -100,10 +82,6 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
             
             tcpmanager->sockets[i] = newfd;
             break;
-            /*if(tcpmanager->sockets[i] ==-1){
-                 * tpcmanager->sockets[i] = newfd;
-                 * break;
-            * }*/
         }
         
         if(i == MAX_CON){
@@ -111,21 +89,6 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
             close(newfd);
         }
     }
-    
-        
-    if(tcpmanager->idfd != -1 && FD_ISSET(tcpmanager->idfd,rfds)){
-        FD_CLR(tcpmanager->idfd, rfds);
-        if((n=read(tcpmanager->idfd,buffer,128))!=0){
-            if(n==-1)exit(1);
-            buffer[n]='\0';
-            
-            RequestParseString(request, buffer);
-            RequestAddFD(request, tcpmanager->idfd);
-            
-            reqcount = 1;
-        }
-    }
-    
 
     for(i = 0; i < MAX_CON; i++){
         if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
@@ -167,18 +130,15 @@ void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
     }
 }
 
-int TCPManagerRespond(TCPManager * tcpmanager, Request * request, int searchID){
-
-    printf("You, %d, asked for it.", RoutingTablePop(tcpmanager->localRouting, searchID));
-    
-    return 1;
+int TCPManagerRoutingPop(TCPManager * tcpmanager, Request * request, int searchID){
+    return RoutingTablePop(tcpmanager->localRouting, searchID);
 }
 
-void TCPManagerRoutingEntry(TCPManager * tcpmanager, int searchID, int fd){
+void TCPManagerRoutingPush(TCPManager * tcpmanager, int searchID, int fd){
 	RoutingTablePush(tcpmanager->localRouting, searchID, fd);
 }
 
-void TCPManagerStop ( TCPManager * tcpmanager){
+void TCPManagerStop( TCPManager * tcpmanager ){
     int i;
     
     for(i=0; i<MAX_CON; i++){

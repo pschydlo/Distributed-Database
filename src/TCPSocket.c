@@ -1,7 +1,20 @@
 #include "TCPSocket.h"
 
-int TCPSocketAccept(int fd){
+int TCPSocketWrite(int fd, char * buffer, int nbytes){
+    char * ptr = buffer;
+    int nwritten;
+
+    while(nbytes>0){
+        nwritten=write(fd,ptr,nbytes);
+        if(nwritten<=0) return -1;
+        nbytes-=nwritten;
+        ptr+=nwritten;
+    }
     
+    return 1;
+}
+
+int TCPSocketAccept(int fd){
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
     
@@ -9,9 +22,7 @@ int TCPSocketAccept(int fd){
 }
 
 int TCPSocketListen(int fd){
-    
     return listen(fd, 5);
-
 }
 
 int TCPSocketBind(int fd, int port){

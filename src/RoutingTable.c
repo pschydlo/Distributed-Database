@@ -23,17 +23,17 @@ RoutingTable * RoutingTableCreate(int size){
     routingtable->size = size;
     
     return routingtable;
-};
+}
 
 void RoutingTablePush(RoutingTable * routingtable, int key, int value){
     routingtable->entries[key]->last++;
     routingtable->entries[key]->values[(routingtable->entries[key])->last] = value;
-};
+}
 
 int RoutingTablePop(RoutingTable * routingtable, int key){
     if(routingtable->entries[key]->last == 0) return -1;
     return (routingtable->entries[key]->values[(routingtable->entries[key])->last--]);
-};
+}
 
 void RoutingTableDestroy(RoutingTable * routingtable){
     int i = 0;
@@ -44,4 +44,4 @@ void RoutingTableDestroy(RoutingTable * routingtable){
              
     free(routingtable->entries);
     free(routingtable);         
-};
+}

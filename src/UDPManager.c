@@ -8,6 +8,15 @@ struct UDPManager{
     
 };
 
+int UDPManagerSetTCPfd(UDPManager * udpmanager, int tcpfd){
+    udpmanager->tcpfd = tcpfd;
+    return 0;
+}
+
+int UDPManagerTCPfd(UDPManager * udpmanager){
+    return udpmanager->tcpfd;
+}
+
 int UDPManagerID(UDPManager * udpmanager){
     return udpmanager->id;
 }
@@ -22,8 +31,10 @@ int UDPManagerMsg(UDPManager * udpmanager, char * buffer){
 
 int UDPManagerJoin(UDPManager * udpmanager, int ring, int id){
     char buffer[128];
+    
     udpmanager->ring = ring;
     udpmanager->id   = id;
+    
     sprintf(buffer, "BQRY %d", ring);
     return UDPManagerMsg(udpmanager, buffer);
 }
@@ -62,26 +73,33 @@ int UDPManagerRem(UDPManager * udpmanager){
 }
 
 int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
-    FD_SET(udpmanager->fd, rfds);
+    if(udpmanager->fd > 0 ) FD_SET(udpmanager->fd, rfds);
     if(udpmanager->fd > *maxfd) *maxfd = udpmanager->fd;
+
+    if(udpmanager->tcpfd > 0) FD_SET(udpmanager->tcpfd, rfds);
+    if(udpmanager->tcpfd > *maxfd) *maxfd = udpmanager->tcpfd;
+    
     return 0;
 }
 
 int UDPManagerStart(UDPManager * udpmanager){
     char opt;
     while((udpmanager->fd = UDPSocketCreate()) == -1){
-        scanf("UDPSocketCreate failed. Try again? [Y/n] %c", &opt);
+        printf("UDPSocketCreate failed. Try again? [Y/n] ");
+        scanf("%c", &opt);
         if(opt != 'Y' && opt != 'y') exit(1);
     }
     return 0;
 }
 
-UDPManager * UDPManagerInit(){
+UDPManager * UDPManagerCreate(){
     UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
     memset(udpmanager, 0, sizeof(UDPManager));
     
-    strcpy(udpmanager->ip, "193.136.138.142");  /*ip de tejo.tecnico.ulisboa.pt*/
-    udpmanager->port = 58000;
+    strcpy(udpmanager->ip, "193.136.138.142");
+    udpmanager->port  = 58000;
+    udpmanager->tcpfd = -1;
+    udpmanager->fd = -1;
     return udpmanager;
 }
 
@@ -96,21 +114,35 @@ int UDPManagerReq(UDPManager * udpmanager, fd_set * rfds, Request * request){
     struct sockaddr_in addr;
     
     char buffer[128];
+    if(udpmanager->tcpfd != -1 && FD_ISSET(udpmanager->tcpfd,rfds)){
+        FD_CLR(udpmanager->tcpfd, rfds);
+        if((n = read(udpmanager->tcpfd, buffer, 128))!=0){
+            if(n == -1) exit(1);
+            buffer[n] = '\0';
+            
+            RequestParseString(request, buffer);
+            RequestAddFD(request, udpmanager->tcpfd);
+            return 1;
+        }
+    }
     
-    if(!FD_ISSET(udpmanager->fd, rfds)) return 0;
-    FD_CLR(udpmanager->fd, rfds);
-    
-    socklen_t addrlen = sizeof(struct sockaddr_in);
+    if(udpmanager->fd != -1 && FD_ISSET(udpmanager->fd,rfds)){
+        FD_CLR(udpmanager->fd, rfds);
 
-    n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)(&addr), &addrlen);
-    if(n == -1) exit(1);
+        socklen_t addrlen = sizeof(struct sockaddr_in);
+
+        n = recvfrom(udpmanager->fd, buffer, 128, 0, (struct sockaddr*)(&addr), &addrlen);
+        if(n == -1) exit(1);
+
+        buffer[n] = '\n';
+        buffer[n+1] = '\0';
+
+        RequestParseString(request, buffer);
+        
+        return 1;
+    }
     
-    buffer[n] = '\n';
-    buffer[n+1] = '\0';
-    
-    RequestParseString(request, buffer);
-    
-    return 1;
+    return 0;
 }
 
 int UDPManagerStatus(UDPManager * udpmanager){

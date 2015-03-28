@@ -12,11 +12,7 @@
 
 typedef struct TCPManager TCPManager;
 
-int TCPManagerIDfd(TCPManager * tcpmanager);
-int TCPManagerSearchID(TCPManager * tcpmanager);
-int TCPManagerSetSearch(TCPManager * tcpmanager, int idfd, int searchid);
-
-TCPManager * TCPManagerInit();
+TCPManager * TCPManagerCreate();
 int TCPManagerStart(TCPManager * tcpmanager, int * TCPport);
 
 int TCPManagerArm(TCPManager * tcpmanager, fd_set * rfds, int * maxfd);
@@ -24,4 +20,5 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request);
 void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd);
 void TCPManagerStop ( TCPManager * tcpmanager);
 
-void TCPManagerRoutingEntry(TCPManager * tcpmanager, int searchID, int fd);
+int TCPManagerRoutingPop(TCPManager * tcpmanager, Request * request, int searchID);
+void TCPManagerRoutingPush(TCPManager * tcpmanager, int searchID, int fd);

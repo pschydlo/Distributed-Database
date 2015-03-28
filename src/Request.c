@@ -4,20 +4,21 @@ struct Request{
     char buffer[128];
     char argv[10][128];
     int argc;
-  int fd;
+    int fd;
 };
 
 int RequestParseString(Request * request, char * buffer){
     int n, start = 0;
+    RequestReset(request);
     
     for(n = 0; buffer[n] != '\0'; n++){
-        if(buffer[n] != ' ' && buffer[n]!= '\n') continue;
+        if(buffer[n] != ' ' && buffer[n] != '\n') continue;
     
         RequestPushArg(request, buffer + start, n - start);
         start = n + 1;
      
-    if(buffer[n] == '\n') return n+1;
-  }
+        if(buffer[n] == '\n') return n+1;
+    }
     
     return 0;
 }
@@ -53,7 +54,7 @@ void RequestReset(Request * request){
     memset(request, 0, sizeof(Request));
     
     request->argc = 0;
-  request->fd   = -1;
+    request->fd   = -1;
 }
 
 int RequestPushArg(Request * request, char * memstart, int length){

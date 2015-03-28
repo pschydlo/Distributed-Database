@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -13,3 +14,4 @@ int TCPSocketBind(int fd, int port);
 int TCPSocketListen(int fd);
 int TCPSocketAccept(int fd);
 
+int TCPSocketWrite(int fd, char * buffer, int nbytes);

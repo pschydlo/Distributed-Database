@@ -49,7 +49,7 @@
 #define UDP_OK  213
 #define UDP_EMPTY 1929
 #define UDP_BRSP 942
-#define UDP_SUCC 777
+#define JOIN_SUCC 777
 
 /* --------- End Switching Codes ---------- */
 
@@ -74,13 +74,10 @@ Server * ServerInit(){
     server->shutdown    = 0;
     server->debug       = 0;
     
-    server->udpmanager  = UDPManagerInit();
-    
-    server->tcpmanager  = TCPManagerInit();
-    server->ringmanager = RingManagerInit();
+    server->udpmanager  = UDPManagerCreate();
+    server->tcpmanager  = TCPManagerCreate();
+    server->ringmanager = RingManagerCreate();
     server->routingtable= RoutingTableCreate(64);
-    
-    //ServerProcArg(server, argc, argv);
     
     return server;
 }
@@ -98,8 +95,8 @@ int ServerStart(Server * server, char * ip, int port){
     RequestReset(request);
     
     /* Start interfaces */
-    RingManagerStart(server->ringmanager, server->ip, server->TCPport);
     TCPManagerStart(server->tcpmanager, &(server->TCPport));
+    RingManagerStart(server->ringmanager, server->ip, server->TCPport);
     UDPManagerStart(server->udpmanager);
     /*
     HTTPManager * httpmanager = HTTPManagerCreate();
@@ -118,12 +115,14 @@ int ServerStart(Server * server, char * ip, int port){
         
         counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
         
-        if(counter<0) exit(1);
+        if(counter < 0){
+            puts("Select error.");
+            exit(1);
+        }
         if(counter == 0) continue;
 
         do{
             n = 0;
-            
             RequestReset(request);
             if(RingManagerReq(server->ringmanager, &rfds, request)){
                 ServerProcRingReq(server, request);
@@ -134,7 +133,7 @@ int ServerStart(Server * server, char * ip, int port){
             if(TCPManagerReq(server->tcpmanager, &rfds, request)){
                 ServerProcTCPReq(server, request);
                 n++;
-            }; 
+            }
 
             RequestReset(request);
             if(UDPManagerReq(server->udpmanager, &rfds, request)){
@@ -225,26 +224,49 @@ int ServerProcUDPReq(Server * server, Request * request){
             /* we create a function called UDPManagerCheckID() */
             
             if(id != destID){
-                int n, idfd = TCPSocketCreate();
+                int n, tcpfd = TCPSocketCreate();
                 
-                if((n = TCPSocketConnect(idfd, destIP, destPort)) < 0){
+                if((n = TCPSocketConnect(tcpfd, destIP, destPort)) < 0){
                     printf("IP: %s, Port: %d", destIP, destPort);
-                    printf("Could not connect to boot vertex.");
+                    puts("Could not connect to boot vertex.");
                     exit(1);
                 } /*ERROR! checking to be done*/
 
                 char msg[50];
                 sprintf(msg, "ID %d\n", UDPManagerID(server->udpmanager));
-
-                write(idfd, msg, strlen(msg));
-                TCPManagerSetSearch(server->tcpmanager, idfd, -1); /*Temporarily storing fd for ID sending here*/
-                /*Until here*/
+                write(tcpfd, msg, strlen(msg));
+                
+                UDPManagerSetTCPfd(server->udpmanager, tcpfd);
             } else {
                 printf("ID %d occupied, please choose another\n", destID);
             }
             
             break;
         }
+        case(JOIN_SUCC):
+        {
+            int id   = UDPManagerID(server->udpmanager);
+            int ring = UDPManagerRing(server->udpmanager);
+            int succiID    = atoi(RequestGetArg(request, 1));
+            char * succiIP = RequestGetArg(request, 2);
+            int succiPort  = atoi(RequestGetArg(request, 3));
+            
+            printf("Got this far!\n");
+            fflush(stdout);
+
+            if(UDPManagerID(server->udpmanager) == succiID){
+                printf("ID %d already in use in ring, please select another\n", succiID);
+                break;
+            }
+            
+            RingManagerSetRing(server->ringmanager, ring, id);
+            RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+            close(UDPManagerTCPfd(server->udpmanager));
+            UDPManagerSetTCPfd(server->udpmanager, -1);
+            
+            break;
+        }
+        
         default:
             break;
     }   
@@ -256,12 +278,12 @@ int ServerProcUDPReq(Server * server, Request * request){
 
 /*DONT FORGET ABOUT ROUTE HANDLING, IF UI OR IF EXTERNAL*/
 
-int ServerProcRingReq(Server * server, Request * request){  
+int ServerProcRingReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
     
-    if(server->debug){  
+    if(server->debug){
         printf("Ring wrote: ");
         int i = 0;
         for(i = 0; i < RequestGetArgCount(request); i++){
@@ -298,7 +320,7 @@ int ServerProcRingReq(Server * server, Request * request){
             while((interfaceID = RoutingTablePop(server->routingtable, searchID)) != -1){
                 
                 if(server->debug){
-                    printf("RoutingTable: Handling response to interface %d", interfaceID); 
+                    printf("RoutingTable: Handling response to interface %d\n", interfaceID); 
                     fflush(stdout);
                 }
 
@@ -311,9 +333,10 @@ int ServerProcRingReq(Server * server, Request * request){
                     }
                     case(TCP):
                     {
+                        int fd = TCPManagerRoutingPop(server->tcpmanager, request, searchID);
                         char msg[50];
                         sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
-                        write(TCPManagerIDfd(server->tcpmanager), msg, strlen(msg));
+                        write(fd, msg, strlen(msg));
                         break;
                     }
                 }
@@ -404,40 +427,12 @@ int ServerProcTCPReq(Server * server, Request * request){
         {
             int id   = RingManagerId(server->ringmanager);
             int succiID    = atoi(RequestGetArg(request, 1));
-            char * succiIP = RequestGetArg(request, 2); 
-            int succiPort = atoi(RequestGetArg(request, 3)); 
+            char * succiIP = RequestGetArg(request, 2);
+            int succiPort  = atoi(RequestGetArg(request, 3)); 
                     
             RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
             
             break;  
-        }
-        case(TCP_SUCC):
-        {
-           /* int destID      = atoi(RequestGetArg(request, 1));
-            char * destIP   = RequestGetArg(request, 2); 
-            int destPort    = atoi(RequestGetArg(request, 3));
-            * call them dest or succi??*/
-            
-            int id   = UDPManagerID(server->udpmanager);
-            int ring = UDPManagerRing(server->udpmanager);
-            int succiID    = atoi(RequestGetArg(request, 1));
-            char * succiIP = RequestGetArg(request, 2); 
-            int succiPort = atoi(RequestGetArg(request, 3));
-            
-            printf("Got this far!\n");
-            fflush(stdout);
-
-            if(UDPManagerID(server->udpmanager) == succiID){
-                printf("ID %d already in use in ring, please select another\n", succiID);
-                break;
-            }
-            
-            RingManagerSetRing(server->ringmanager, ring, id);
-            RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
-            close(TCPManagerIDfd(server->tcpmanager));
-            TCPManagerSetSearch(server->tcpmanager, -1, -1);
-            
-            break;
         }
         case(TCP_ID):
         {
@@ -446,7 +441,7 @@ int ServerProcTCPReq(Server * server, Request * request){
             int searchID = atoi(RequestGetArg(request, 1));
             int nodeID   = RingManagerId(server->ringmanager);
             
-            if(RingManagerCheck(server->ringmanager, searchID)){ 
+            if(RingManagerCheck(server->ringmanager, searchID)){
                 char msg[50];
                 sprintf(msg, "SUCC %d %s %d\n", nodeID, server->ip, server->TCPport);
                 write(RequestGetFD(request), msg, strlen(msg));
@@ -459,9 +454,9 @@ int ServerProcTCPReq(Server * server, Request * request){
             }
             else{
                 RingManagerQuery(server->ringmanager, nodeID, searchID);
-                TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), searchID);
+                UDPManagerSetTCPfd(server->udpmanager, RequestGetFD(request));
                 RoutingTablePush(server->routingtable, searchID, TCP);
-                TCPManagerRoutingEntry(server->tcpmanager, searchID, RequestGetFD(request));
+                TCPManagerRoutingPush(server->tcpmanager, searchID, RequestGetFD(request));
             
                 if(server->debug){
                     printf("Will look for someone to SUCC external off\n");

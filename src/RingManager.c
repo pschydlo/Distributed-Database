@@ -61,7 +61,7 @@ int d(int k, int l){
 int RingManagerCheck(RingManager * ringmanager, int k){
     int id = ringmanager->id;
     if (ringmanager->predi == NULL) return -1;
-        
+
     int predid = ringmanager->predi->id;
           
     if(d(k, id) < d(k, predid)) return 1;
@@ -112,7 +112,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         ringmanager->predi = (Peer*)malloc(sizeof(Peer));
         memset(ringmanager->predi, 0, sizeof(Peer));
                 
-        ringmanager->predi->buffer[0] = '\0';
+        ringmanager->predi->buffer[0]  = '\0';
         ringmanager->predi->bufferhead = 0;
     }else{
         char msg[50];
@@ -204,32 +204,15 @@ int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
     return n;
 }
 
-int RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes){
-        
-    char * ptr = buffer;
-    int nwritten;
-    
-    while(nbytes>0){
-        nwritten=write(fd,ptr,nbytes);
-        if(nwritten<=0)exit(1);
-        nbytes-=nwritten;
-        ptr+=nwritten;
-    }
-
-    return 1;
-}
-
 int RingManagerStart(RingManager * ringmanager, char * ip, int TCPport){
     strcpy(ringmanager->ip, ip);
     ringmanager->TCPport = TCPport;
     return 0;
-    }
+}
 
-RingManager * RingManagerInit(){
+RingManager * RingManagerCreate(){
 
-    RingManager * ringmanager;
-
-    ringmanager = (RingManager*)malloc(sizeof(RingManager));
+    RingManager * ringmanager = (RingManager*)malloc(sizeof(RingManager));
     memset(ringmanager, 0, sizeof(RingManager));
     
     ringmanager->succi = NULL;
@@ -249,17 +232,18 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         memcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength, ringmanager->succi->bufferhead - reqlength);
         
         ringmanager->succi->bufferhead = ringmanager->succi->bufferhead - reqlength;
-        ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
+        ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
         return 1;
-    }
+    }else RequestReset(request);
+    
     
     if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
         memcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength, ringmanager->predi->bufferhead - reqlength);
-        
+
         ringmanager->predi->bufferhead = ringmanager->predi->bufferhead - reqlength;
-        ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
+        ringmanager->predi->buffer[ringmanager->predi->bufferhead] = '\0';
         return 1;
-    }
+    }else RequestReset(request);
     
     /* ----- Fill buffers ----------------*/
     if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
@@ -276,7 +260,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
             fflush(stdout);
         }else{
             ringmanager->predi->bufferhead += n;
-            ringmanager->predi->buffer[ringmanager->predi->bufferhead + 1] = '\0';
+            ringmanager->predi->buffer[ringmanager->predi->bufferhead] = '\0';
             return 1;
         }
     }
@@ -294,7 +278,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
             fflush(stdout);
         }else{
             ringmanager->succi->bufferhead += n;
-            ringmanager->succi->buffer[ringmanager->succi->bufferhead + 1] = '\0';
+            ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
             return 1;
         }
     }
