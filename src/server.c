@@ -232,8 +232,8 @@ int ServerProcUDPReq(Server * server, Request * request){
                 int n, tcpfd = TCPSocketCreate();
                 
                 if((n = TCPSocketConnect(tcpfd, destIP, destPort)) < 0){
-                    printf("IP: %s, Port: %d", destIP, destPort);
-                    puts("Could not connect to boot vertex.");
+                    printf("IP: %s, Port: %d\n", destIP, destPort);
+                    puts("Could not connect to boot vertex.\n");
                     exit(1);
                 } /*ERROR! checking to be done*/
 
@@ -507,6 +507,11 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_JOIN):
         {
             if(argCount == 3){
+                if(RingManagerRing(server->ringmanager) >= 0){
+                    printf("Please leave the current ring before attempting a join.\n");    
+                    break;
+                }
+                
                 UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
                 
                 printf("Request for information sent.\n");
