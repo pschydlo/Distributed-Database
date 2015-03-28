@@ -155,11 +155,15 @@ void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd){
     }
 }
 
-int TCPManagerRespond(Request * request, int fd){
+int TCPManagerRespond(TCPManager * tcpmanager, Request * request, int searchID){
 
-    
+    printf("You, %d, asked for it.", RoutingTablePop(tcpmanager->localRouting, searchID));
     
     return 1;
+}
+
+void TCPManagerRoutingEntry(TCPManager * tcpmanager, int searchID, int fd){
+	RoutingTablePush(tcpmanager->localRouting, searchID, fd);
 }
 
 void TCPManagerStop ( TCPManager * tcpmanager){

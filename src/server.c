@@ -462,6 +462,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                 RingManagerQuery(server->ringmanager, nodeID, searchID);
                 TCPManagerSetSearch(server->tcpmanager, RequestGetFD(request), searchID);
                 RoutingTablePush(server->routingtable, searchID, TCP);
+                TCPManagerRoutingEntry(server->tcpmanager, searchID, RequestGetFD(request));
             
                 if(server->debug){
                     printf("Will look for someone to SUCC external off\n");
