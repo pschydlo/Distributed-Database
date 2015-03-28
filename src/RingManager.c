@@ -69,8 +69,8 @@ int RingManagerCheck(RingManager * ringmanager, int k){
 }
 
 void RingManagerMsg(RingManager * ringmanager, int dest, char * msg){
-    if(dest == 0 && ringmanager->succi != NULL) write(ringmanager->succi->fd, msg, strlen(msg));
-    if(dest == 1 && ringmanager->predi != NULL) write(ringmanager->predi->fd, msg, strlen(msg));
+    if(dest == 0 && ringmanager->succi != NULL) TCPSocketWrite(ringmanager->succi->fd, msg, strlen(msg));
+    if(dest == 1 && ringmanager->predi != NULL) TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
 }
 
 
@@ -81,7 +81,7 @@ void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
     printf("You are sending: %s", query);
     fflush(stdout);
   
-    if(ringmanager->succi != NULL) write(ringmanager->succi->fd, query, strlen(query));
+    if(ringmanager->succi != NULL) TCPSocketWrite(ringmanager->succi->fd, query, strlen(query));
 }
 
 void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port){
@@ -91,7 +91,7 @@ void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int re
     printf("You are sending: %s", query);
     fflush(stdout);
 
-    if(ringmanager->predi != NULL) write(ringmanager->predi->fd, query, strlen(query));
+    if(ringmanager->predi != NULL) TCPSocketWrite(ringmanager->predi->fd, query, strlen(query));
 }
 
 int RingManagerStatus(RingManager * ringmanager){
@@ -118,7 +118,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         char msg[50];
         sprintf(msg, "CON %d %s %d\n", id, ip, port); 
 
-        write(ringmanager->predi->fd, msg, strlen(msg));
+        TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
         close(ringmanager->predi->fd);
     }
   
@@ -165,7 +165,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
     
     char msg[50];
     sprintf(msg, "NEW %d %s %d\n", id, ringmanager->ip, ringmanager->TCPport);
-    write(fd, msg, strlen(msg));
+    TCPSocketWrite(fd, msg, strlen(msg));
 
     if(ringmanager->succi == NULL){
         ringmanager->succi = malloc(sizeof(Peer));
@@ -301,14 +301,14 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     
     if(isBoot){
         sprintf(msg,"BOOT\n");
-        write(ringmanager->succi->fd, msg, strlen(msg));
+        TCPSocketWrite(ringmanager->succi->fd, msg, strlen(msg));
     }
     
     
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
     printf("%s\n", msg);
     fflush(stdout);
-    write(ringmanager->predi->fd, msg, strlen(msg));
+    TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
 
     close(ringmanager->predi->fd);
     close(ringmanager->succi->fd);

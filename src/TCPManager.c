@@ -33,8 +33,12 @@ int TCPManagerStart(TCPManager * tcpmanager, int * TCPport){
     }
     
     while(TCPSocketBind(pfd, *TCPport) == -1){
-        printf("Choose another port: ");
-        scanf("%d", TCPport);
+        printf("Port unavailable. Please choose another port: ");
+        
+        while(scanf("%d", TCPport) != 1){
+            getchar();
+            printf("Input not a number, insert a diferent port: "); 
+        }
     }
     
     while(TCPSocketListen(pfd) == -1){
@@ -85,7 +89,7 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
         }
         
         if(i == MAX_CON){
-            write(newfd, "Busy try again later.\n", 22);
+            TCPSocketWrite(newfd, "Busy try again later.\n", 22);
             close(newfd);
         }
     }
@@ -139,7 +143,7 @@ void TCPManagerStop( TCPManager * tcpmanager ){
     for(i=0; i<MAX_CON; i++){
         if(tcpmanager->sockets[i] == -1) continue;
         
-        write(tcpmanager->sockets[i], "Server shutting down.\n", 23);
+        TCPSocketWrite(tcpmanager->sockets[i], "Server shutting down.\n", 23);
         close(tcpmanager->sockets[i]);
     }
     

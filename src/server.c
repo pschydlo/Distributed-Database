@@ -2,6 +2,8 @@
 
 #define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
 
+#define ID_UPPER_BOUND 64
+
 /*--------- Start Interface Codes ---------- */
 
 #define UI   0
@@ -28,6 +30,7 @@
 #define UI_CHECK  1097
 #define UI_DEBUG  1133
 #define UI_STATUS 2913
+#define UI_HELP   636
 
 /* Ring Manager comand hashes */
 
@@ -72,12 +75,12 @@ Server * ServerInit(){
     /* -- Default configs -- */
     server->isBoot      = 0;
     server->shutdown    = 0;
-    server->debug       = 0;
+    server->debug       = 1;
     
     server->udpmanager  = UDPManagerCreate();
     server->tcpmanager  = TCPManagerCreate();
     server->ringmanager = RingManagerCreate();
-    server->routingtable= RoutingTableCreate(64);
+    server->routingtable= RoutingTableCreate(ID_UPPER_BOUND);
     
     return server;
 }
@@ -101,6 +104,8 @@ int ServerStart(Server * server, char * ip, int port){
     /*
     HTTPManager * httpmanager = HTTPManagerCreate();
     HTTPManagerStart(httpmanager, 2000);*/
+    
+    printf("Started server succesfully.\n");
     
     /* Event Loop */
     while(!(server->shutdown)){
@@ -206,7 +211,7 @@ int ServerProcUDPReq(Server * server, Request * request){
         }
         case(UDP_NOK):
         {
-            printf("Problem with UDP\n");
+            printf("Problem with UDP. Received NOK.\n");
             break;
         }
         case(UDP_EMPTY):
@@ -235,7 +240,7 @@ int ServerProcUDPReq(Server * server, Request * request){
 
                 char msg[50];
                 sprintf(msg, "ID %d\n", UDPManagerID(server->udpmanager));
-                write(tcpfd, msg, strlen(msg));
+                TCPSocketWrite(tcpfd, msg, strlen(msg));
                 
                 UDPManagerSetTCPfd(server->udpmanager, tcpfd);
             } else {
@@ -264,6 +269,8 @@ int ServerProcUDPReq(Server * server, Request * request){
             RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
             close(UDPManagerTCPfd(server->udpmanager));
             UDPManagerSetTCPfd(server->udpmanager, -1);
+            
+            printf("Joining ring.\n");
             
             break;
         }
@@ -335,7 +342,7 @@ int ServerProcRingReq(Server * server, Request * request){
                         int fd = TCPManagerRoutingPop(server->tcpmanager, request, searchID);
                         char msg[50];
                         sprintf(msg, "SUCC %d %s %d\n", responsibleID, responsibleIP, responsiblePort);
-                        write(fd, msg, strlen(msg));
+                        TCPSocketWrite(fd, msg, strlen(msg));
                         break;
                     }
                 }
@@ -429,10 +436,12 @@ int ServerProcTCPReq(Server * server, Request * request){
             int searchID = atoi(RequestGetArg(request, 1));
             int nodeID   = RingManagerId(server->ringmanager);
             
+            if( searchID < 0 || searchID > ID_UPPER_BOUND ) break;
+                
             if(RingManagerCheck(server->ringmanager, searchID)){
                 char msg[50];
                 sprintf(msg, "SUCC %d %s %d\n", nodeID, server->ip, server->TCPport);
-                write(RequestGetFD(request), msg, strlen(msg));
+                TCPSocketWrite(RequestGetFD(request), msg, strlen(msg));
                 
                 if(server->debug){
                     printf("Trying to tell external to SUCC me off\n");
@@ -512,6 +521,10 @@ int ServerProcUIReq(Server * server, Request * request){
                                         RingManagerSuccIP(server->ringmanager), 
                                         RingManagerSuccPort(server->ringmanager));
             }else RingManagerLeave(server->ringmanager, server->isBoot);
+            
+            printf("Succesfully left ring. Hope to see you soon. \n");
+            fflush(stdout);
+            
             break;
         }
         case(UI_SHOW):
@@ -543,6 +556,8 @@ int ServerProcUIReq(Server * server, Request * request){
             int searchID  = atoi(RequestGetArg(request, 1));
             int nodeID    = RingManagerId(server->ringmanager);
 
+            if(searchID < 0 || searchID > ID_UPPER_BOUND) break;
+            
             if( RingManagerCheck(server->ringmanager, searchID) ){
                 printf("Yey, don't have to go far: %i, ip, port\n", nodeID); /*Add variables for ip and port eventually*/
             } else {
@@ -620,6 +635,11 @@ int ServerProcUIReq(Server * server, Request * request){
             
             printf("Debug mode enabled.\n");
             fflush(stdout);
+            break;
+        }
+        case(UI_HELP):
+        {
+            printf("There's no help for you young lad. \n");
             break;
         }
         default:
