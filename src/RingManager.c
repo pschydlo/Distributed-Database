@@ -234,7 +234,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         ringmanager->succi->bufferhead = ringmanager->succi->bufferhead - reqlength;
         ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
         return 1;
-    }else RequestReset(request);
+    }/*else RequestReset(request);*/
     
     
     if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
@@ -243,13 +243,15 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         ringmanager->predi->bufferhead = ringmanager->predi->bufferhead - reqlength;
         ringmanager->predi->buffer[ringmanager->predi->bufferhead] = '\0';
         return 1;
-    }else RequestReset(request);
+    } //else RequestReset(request);
     
     /* ----- Fill buffers ----------------*/
     if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
         FD_CLR(ringmanager->predi->fd, rfds);
         
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
+        printf("N: %d\n", n);
+        fflush(stdout);
         
         if( n <= 0 ) {
             close(ringmanager->predi->fd);

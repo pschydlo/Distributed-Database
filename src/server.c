@@ -609,7 +609,8 @@ int ServerProcUIReq(Server * server, Request * request){
         }
         case(UI_EXIT):
         {
-            server->shutdown = 1;
+            if(RingManagerRing(server->ringmanager) != -1) printf("Please leave ring before exiting.\n");
+            else server->shutdown = 1;
             break;
         }
         case(UI_CHECK):
