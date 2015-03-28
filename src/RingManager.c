@@ -258,6 +258,11 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 
             printf("Lost connection to predi.\n");
             fflush(stdout);
+            
+           /* RequestReset(request);
+            RequestPushArg(request, "CONFAIL");
+            RequestPushArg(request, "predi"); */
+            return 1;
         }else{
             ringmanager->predi->bufferhead += n;
             ringmanager->predi->buffer[ringmanager->predi->bufferhead] = '\0';
@@ -276,6 +281,11 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 
             printf("Lost connection to succi.\n");
             fflush(stdout);
+        
+            /*
+            RequestReset(request);
+            RequestPushArg(request, "CONFAIL");
+            RequestPushArg(request, "succi"); */
         }else{
             ringmanager->succi->bufferhead += n;
             ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';

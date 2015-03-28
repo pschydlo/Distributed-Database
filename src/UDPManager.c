@@ -149,3 +149,7 @@ int UDPManagerStatus(UDPManager * udpmanager){
     printf("Anel %i | Id %i\n", udpmanager->ring, udpmanager->id);
     return 0;
 }
+
+void UDPManagerStartRecovery(UDPManager * udpmanager){
+    
+}
