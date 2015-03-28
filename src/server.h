@@ -1,5 +1,6 @@
 #include "UDPManager.h"
 #include "TCPManager.h"
+#include "HTTPManager.h"
 #include "UIManager.h"
 #include "RingManager.h"
 #include "RoutingTable.h"
