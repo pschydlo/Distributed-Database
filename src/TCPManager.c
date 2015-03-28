@@ -147,6 +147,8 @@ void TCPManagerStop( TCPManager * tcpmanager ){
         close(tcpmanager->sockets[i]);
     }
     
+    RoutingTableDestroy(tcpmanager->localRouting);
+    
     close(tcpmanager->pfd);
     free(tcpmanager);
 }
