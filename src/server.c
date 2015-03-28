@@ -560,7 +560,15 @@ int ServerProcUIReq(Server * server, Request * request){
             int searchID  = atoi(RequestGetArg(request, 1));
             int nodeID    = RingManagerId(server->ringmanager);
 
-            if(searchID < 0 || searchID > ID_UPPER_BOUND) break;
+            if(searchID < 0 || searchID > ID_UPPER_BOUND){
+                printf("Requested ID is out of allowed bounds.");
+                break;
+            }
+            
+            if(RingManagerRing(server->ringmanager) == -1){
+                printf("Node does not belong to any ring.\n");
+                break;
+            }
             
             if( RingManagerCheck(server->ringmanager, searchID) ){
                 printf("Yey, don't have to go far: %i, ip, port\n", nodeID); /*Add variables for ip and port eventually*/
@@ -568,6 +576,7 @@ int ServerProcUIReq(Server * server, Request * request){
                 RingManagerQuery(server->ringmanager, nodeID, searchID); /*Add int->string support eventually*/
                 RoutingTablePush(server->routingtable, searchID, UI);
             }
+            
             break;
         }
         case(UI_BOOPP):

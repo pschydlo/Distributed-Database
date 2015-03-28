@@ -322,7 +322,10 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     fflush(stdout);
     TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
 
+    shutdown(ringmanager->predi->fd, SHUT_WR);
     close(ringmanager->predi->fd);
+    
+    shutdown(ringmanager->succi->fd, SHUT_WR);
     close(ringmanager->succi->fd);
     
     free(ringmanager->predi);
