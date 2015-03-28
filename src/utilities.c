@@ -30,7 +30,11 @@ void getIPAddr(Config * config){
     }
 
     printf("Which network interface do you wish to use?:");
-    scanf("%i", &n);
+    
+    while(scanf("%d", &n) != 1 || n < 0 || n > i - 1){
+        getchar();
+        printf("Please insert a number between %d and %d:", 0, i - 1); 
+    }
 
     strcpy(config->extIP, ips[n]);
 

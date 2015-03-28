@@ -5,10 +5,10 @@ int TCPSocketWrite(int fd, char * buffer, int nbytes){
     int nwritten;
 
     while(nbytes>0){
-        nwritten=write(fd,ptr,nbytes);
+        nwritten=write(fd, ptr, nbytes);
         if(nwritten<=0) return -1;
-        nbytes-=nwritten;
-        ptr+=nwritten;
+        nbytes -= nwritten;
+        ptr += nwritten;
     }
     
     return 1;
