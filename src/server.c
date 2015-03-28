@@ -378,6 +378,7 @@ int ServerProcRingReq(Server * server, Request * request){
             }else{
                 RingManagerQuery(server->ringmanager, originID, searchID );
             }
+            break;
         }
         case(RING_BOOT):
         {
@@ -442,7 +443,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                 char msg[50];
                 sprintf(msg, "SUCC %d %s %d\n", nodeID, server->ip, server->TCPport);
                 TCPSocketWrite(RequestGetFD(request), msg, strlen(msg));
-                
+
                 if(server->debug){
                     printf("Trying to tell external to SUCC me off\n");
                     printf("%sto fd %d\n", msg, RequestGetFD(request));
@@ -460,6 +461,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                     fflush(stdout);
                 }
             }
+            break;
         }
         
         default: 
@@ -521,9 +523,6 @@ int ServerProcUIReq(Server * server, Request * request){
                                         RingManagerSuccIP(server->ringmanager), 
                                         RingManagerSuccPort(server->ringmanager));
             }else RingManagerLeave(server->ringmanager, server->isBoot);
-            
-            printf("Succesfully left ring. Hope to see you soon. \n");
-            fflush(stdout);
             
             break;
         }
