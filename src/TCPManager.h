@@ -23,3 +23,5 @@ int TCPManagerArm(TCPManager * tcpmanager, fd_set * rfds, int * maxfd);
 int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request);
 void TCPManagerRemoveSocket(TCPManager * tcpmanager, int fd);
 void TCPManagerStop ( TCPManager * tcpmanager);
+
+void TCPManagerRoutingEntry(TCPManager * tcpmanager, int searchID, int fd);
