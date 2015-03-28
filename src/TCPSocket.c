@@ -16,7 +16,6 @@ int TCPSocketListen(int fd){
 
 int TCPSocketBind(int fd, int port){
     
-    int n;
     struct sockaddr_in addr;
 
     memset((void*)&addr,(int)'\0',sizeof(addr));
@@ -25,17 +24,11 @@ int TCPSocketBind(int fd, int port){
     addr.sin_addr.s_addr = htons(INADDR_ANY);
     addr.sin_port        = htons(port);
     
-    if( (n = bind(fd,(struct sockaddr*)&addr,sizeof(addr))) == -1 )exit(1);
-    
-    return n;
+    return bind(fd,(struct sockaddr*)&addr,sizeof(addr));
 }
 
 int TCPSocketCreate(){
-    int fd;
-    
-    if((fd=socket(AF_INET,SOCK_STREAM,0)) == -1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
-    
-    return fd;
+    return socket(AF_INET,SOCK_STREAM,0);
 }
     
 int TCPSocketConnect(int fd, char * ip, int port){

@@ -1,7 +1,9 @@
 #include "utilities.h"
 
 Config * ConfigCreate(){
-    return (Config*)malloc(sizeof(Config));
+    Config * config = (Config*)malloc(sizeof(Config));
+    memset(config, 0, sizeof(Config));
+    return config;
 }
 
 void ConfigDestroy(Config * config){
@@ -77,8 +79,13 @@ int ProcArg(int argc, char ** argv, Config * config){
         fprintf (stderr, "Argumento invalido %s\n", argv[i]);
     
     if(ringPort != NULL) config->extPort = atoi(ringPort);
+    else config->extPort = 9000;
+    
     if(bootIP   != NULL) strcpy(config->bootServerIP, bootIP);
+    else strcpy(config->bootServerIP, "193.136.138.142");
+    
     if(bootPort != NULL) config->bootServerPort = atoi(bootPort);
+    else config->bootServerPort = 58000;
     
     return 0;   
 

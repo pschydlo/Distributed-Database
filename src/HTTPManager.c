@@ -2,7 +2,6 @@
 
 struct HTTPManager{
     int pfd;
-    int fd;
     int indexfd;
 };
 

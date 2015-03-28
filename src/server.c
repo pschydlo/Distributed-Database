@@ -73,7 +73,6 @@ Server * ServerInit(){
     server->isBoot      = 0;
     server->shutdown    = 0;
     server->debug       = 0;
-    server->TCPport     = 9000;
     
     server->udpmanager  = UDPManagerInit();
     
@@ -100,11 +99,11 @@ int ServerStart(Server * server, char * ip, int port){
     
     /* Start interfaces */
     RingManagerStart(server->ringmanager, server->ip, server->TCPport);
-    TCPManagerStart(server->tcpmanager, server->TCPport);
+    TCPManagerStart(server->tcpmanager, &(server->TCPport));
     UDPManagerStart(server->udpmanager);
-    
+    /*
     HTTPManager * httpmanager = HTTPManagerCreate();
-    HTTPManagerStart(httpmanager, 2000);
+    HTTPManagerStart(httpmanager, 2000);*/
     
     /* Event Loop */
     while(!(server->shutdown)){
@@ -115,7 +114,7 @@ int ServerStart(Server * server, char * ip, int port){
         RingManagerArm(server->ringmanager,&rfds,&maxfd);
         TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
         UDPManagerArm(server->udpmanager, &rfds, &maxfd);
-        HTTPManagerArm(httpmanager, &rfds, &maxfd);
+        /*HTTPManagerArm(httpmanager, &rfds, &maxfd);*/
         
         counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
         
@@ -149,10 +148,10 @@ int ServerStart(Server * server, char * ip, int port){
                 n++;
             }
             
-            RequestReset(request);
+          /*  RequestReset(request);
             if(HTTPManagerReq(httpmanager, &rfds, request)){
                 n++;
-            }
+            }*/
             
         } while(n != 0);
     }

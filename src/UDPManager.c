@@ -68,8 +68,11 @@ int UDPManagerArm( UDPManager * udpmanager, fd_set * rfds, int * maxfd ){
 }
 
 int UDPManagerStart(UDPManager * udpmanager){
-    
-    udpmanager->fd = UDPSocketCreate();
+    char opt;
+    while((udpmanager->fd = UDPSocketCreate()) == -1){
+        scanf("UDPSocketCreate failed. Try again? [Y/n] %c", &opt);
+        if(opt != 'Y' && opt != 'y') exit(1);
+    }
     return 0;
 }
 

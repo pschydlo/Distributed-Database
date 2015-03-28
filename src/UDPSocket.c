@@ -1,11 +1,7 @@
 #include "UDPSocket.h"
 
 int UDPSocketCreate(){
-    int fd;
-    
-    if((fd=socket(AF_INET,SOCK_DGRAM,0)) == -1) exit(1); /*ERROR HANDLING TO BE DONE PL0X*/
-    
-    return fd;
+    return socket(AF_INET,SOCK_DGRAM,0);
 }
 
 int UDPSocketSend(int fd, char * ip, int port, char * buffer, int n){

@@ -39,14 +39,26 @@ TCPManager * TCPManagerInit(){
     return tcpmanager;
 }
 
-int TCPManagerStart(TCPManager * tcpmanager, int TCPport){
-    int pfd = TCPSocketCreate();
-    TCPSocketBind(pfd, TCPport);
-    if(TCPSocketListen(pfd)==-1) exit(1);
+int TCPManagerStart(TCPManager * tcpmanager, int * TCPport){
+    int pfd;
+    char opt;
+    
+    while((pfd = TCPSocketCreate()) == -1){
+        scanf("SocketCreate failed. Try again? [Y/n] %c", &opt);
+        if(opt != 'Y' && opt != 'y') exit(1);
+    }
+    
+    while(TCPSocketBind(pfd, *TCPport) == -1){
+        printf("Choose another port: ");
+        scanf("Text %d", TCPport);
+    }
+    
+    while(TCPSocketListen(pfd) == -1){
+        scanf("TCPSocketListen failed. Try again? [Y/n] %c", &opt);
+        if(opt != 'Y' && opt != 'y') exit(1);
+    }
     
     tcpmanager->pfd = pfd;
-    
-    //tcpmanager->buffer = (Buffer*)malloc(sizeof(Buffer));
 
     return 0;
 }

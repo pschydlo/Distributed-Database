@@ -305,6 +305,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
 void RingManagerLeave(RingManager * ringmanager, int isBoot){
     char msg[50];
     
+    if(ringmanager->ring == -1) printf("You are not in a ring.\n");
     ringmanager->id = -1;
     ringmanager->ring = -1;
     
