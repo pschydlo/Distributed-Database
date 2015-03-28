@@ -5,7 +5,7 @@ struct UDPManager{
     char ip[16];
     int port, fd, tcpfd;
     struct sockaddr_in * addr;
-    
+
 };
 
 int UDPManagerSetTCPfd(UDPManager * udpmanager, int tcpfd){

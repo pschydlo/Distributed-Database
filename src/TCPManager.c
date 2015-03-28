@@ -98,19 +98,14 @@ int TCPManagerReq(TCPManager * tcpmanager, fd_set * rfds, Request * request){
         if(tcpmanager->sockets[i] == -1 || !FD_ISSET(tcpmanager->sockets[i],rfds)) continue;
         FD_CLR(tcpmanager->sockets[i], rfds);
         
-        n = send(tcpmanager->sockets[i], " ", 1, MSG_NOSIGNAL);
-        if (n == -1)
-        {
-            close(tcpmanager->sockets[i]);
-            tcpmanager->sockets[i] = -1;
-        
-            continue;
-        }
-        
         if(reqcount == 1) continue;
         
-        if((n=read(tcpmanager->sockets[i],buffer,128))!=0){
-            if(n==-1)exit(1);               /*ERROR HANDLING PLZ DO SMTHG EVENTUALLY*/
+        if((n = read(tcpmanager->sockets[i],buffer,128)) != 0){
+            if(n <= 0){
+				close(tcpmanager->sockets[i]);
+				tcpmanager->sockets[i] = -1;
+				continue;
+			}
             buffer[n]='\0';
             
             RequestParseString(request, buffer);

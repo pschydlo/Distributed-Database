@@ -122,6 +122,7 @@ int ServerStart(Server * server, char * ip, int port){
         
         if(counter < 0){
             puts("Select error.");
+            perror("select()");
             exit(1);
         }
         if(counter == 0) continue;
@@ -276,14 +277,12 @@ int ServerProcUDPReq(Server * server, Request * request){
         
         default:
             break;
-    }   
+    }
     
     return 0;
 }
 
 /* Process Ring Manager Requests */
-
-/*DONT FORGET ABOUT ROUTE HANDLING, IF UI OR IF EXTERNAL*/
 
 int ServerProcRingReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
@@ -429,17 +428,6 @@ int ServerProcTCPReq(Server * server, Request * request){
             TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
             
             break;
-        }
-        case(TCP_CON):/*This case is not used in practice*/
-        {
-            int id   = RingManagerId(server->ringmanager);
-            int succiID    = atoi(RequestGetArg(request, 1));
-            char * succiIP = RequestGetArg(request, 2);
-            int succiPort  = atoi(RequestGetArg(request, 3)); 
-                    
-            RingManagerConnect(server->ringmanager, 1, id, succiID, succiIP, succiPort);
-            
-            break;  
         }
         case(TCP_ID):
         {
