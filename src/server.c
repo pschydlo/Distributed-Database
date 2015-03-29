@@ -92,7 +92,8 @@ int ServerStart(Server * server, char * ip, int port){
     /* Initial setup */
     int maxfd, counter;
     fd_set rfds;
-    int n = 0;
+    int n     = 0;
+    int wrote = 0;
     strcpy(server->ip, ip);
     server->TCPport  = port;
     
@@ -111,9 +112,8 @@ int ServerStart(Server * server, char * ip, int port){
     printf("%s:%d\n\n", server->ip, server->TCPport);
     fflush(stdout);
     
-    printf("$:");
-    fflush(stdout);
-    
+    wrote = 1;
+
     /* Event Loop */
     while(!(server->shutdown)){
         
@@ -124,6 +124,12 @@ int ServerStart(Server * server, char * ip, int port){
         TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
         UDPManagerArm(server->udpmanager, &rfds, &maxfd);
         /*HTTPManagerArm(httpmanager, &rfds, &maxfd);*/
+        
+        if(wrote == 1){
+            printf("$:");
+            fflush(stdout);
+            wrote = 0;
+        }
         
         counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
         
@@ -138,29 +144,26 @@ int ServerStart(Server * server, char * ip, int port){
             n = 0;
             RequestReset(request);
             if(RingManagerReq(server->ringmanager, &rfds, request) > 0){
-                ServerProcRingReq(server, request);
+                wrote = ServerProcRingReq(server, request);
                 n++;
             }
 
             RequestReset(request);
             if(TCPManagerReq(server->tcpmanager, &rfds, request) > 0){
-                ServerProcTCPReq(server, request);
+                wrote = ServerProcTCPReq(server, request);
                 n++;
             }
 
             RequestReset(request);
             if(UDPManagerReq(server->udpmanager, &rfds, request) > 0){
-                ServerProcUDPReq(server, request);
+                wrote = ServerProcUDPReq(server, request);
                 n++;
             }
             
             RequestReset(request);
             if(UIManagerReq(&rfds, request) > 0){
-                ServerProcUIReq(server, request);
+                wrote = ServerProcUIReq(server, request);
                 n++;
-                
-                printf("$:");
-                fflush(stdout);
             }
             
           /*  RequestReset(request);
@@ -309,6 +312,9 @@ int ServerProcRingReq(Server * server, Request * request){
             fflush(stdout);
         } 
         printf("\n");
+        
+        printf("$:");
+        fflush(stdout);
     }
     
     
@@ -346,6 +352,9 @@ int ServerProcRingReq(Server * server, Request * request){
                     case(UI):
                     {
                         printf("%d belongs to %d at %s %d\n", searchID, responsibleID, responsibleIP, responsiblePort);
+                        fflush(stdout);
+                        
+                        printf("$:");
                         fflush(stdout);
                         break;
                     }
@@ -408,6 +417,7 @@ int ServerProcTCPReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
     
+    int wrote = 0;
     
     if(server->debug){
         printf("External wrote: ");
@@ -419,6 +429,8 @@ int ServerProcTCPReq(Server * server, Request * request){
         printf("\n");
         
         printf("From socket %d.\n",RequestGetFD(request));
+        
+        wrote = 1;
     }
     
         
@@ -455,8 +467,11 @@ int ServerProcTCPReq(Server * server, Request * request){
 
                 if(server->debug){
                     printf("%s to fd %d\n", msg, RequestGetFD(request));
-                    fflush(stdout);
-                }
+                    fflush(stdout); 
+                    
+                    wrote = 1;
+                }                            
+
             }
             else{
                 RingManagerQuery(server->ringmanager, nodeID, searchID);
@@ -467,6 +482,8 @@ int ServerProcTCPReq(Server * server, Request * request){
                 if(server->debug){
                     printf("This node will not be the SUCC\n");
                     fflush(stdout);
+                    
+                    wrote = 1;
                 }
             }
             break;
@@ -475,8 +492,8 @@ int ServerProcTCPReq(Server * server, Request * request){
         default: 
             break;
     }
-
-    return 1;
+    
+    return wrote;
 }
 
 /* Process UI Manager Requests */
@@ -485,6 +502,7 @@ int ServerProcUIReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
+    int wrote = 0;
     
     if(server->debug){
         printf("UI wrote: ");
@@ -495,8 +513,8 @@ int ServerProcUIReq(Server * server, Request * request){
         } 
         printf("\n");
         printf("From socket %d.\n",RequestGetFD(request));
+        wrote = 1;
     }
-    
     
     char * command = RequestGetArg(request,0);
     int code = hash(command);
@@ -507,6 +525,7 @@ int ServerProcUIReq(Server * server, Request * request){
             if(argCount == 3){
                 if(RingManagerRing(server->ringmanager) >= 0){
                     printf("Please leave the current ring before attempting a join.\n");    
+                    wrote = 1;
                     break;
                 }
                 
@@ -539,6 +558,7 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_SHOW):
         {
             RingManagerStatus(server->ringmanager);
+            wrote = 1;
             break;
         }
         case(UI_STATUS):
@@ -550,6 +570,7 @@ int ServerProcUIReq(Server * server, Request * request){
             printf("Boot State:\n");
             printf("isBoot = %d\n", server->isBoot);
             fflush(stdout);
+            wrote = 1;
             break;    
         }
         case(UI_RSP):
@@ -572,17 +593,20 @@ int ServerProcUIReq(Server * server, Request * request){
             if(searchID < 0 || searchID > ID_UPPER_BOUND){
                 printf("Requested ID is out of allowed bounds.\n");
                 fflush(stdout);
+                wrote = 1;
                 break;
             }
             
             if(RingManagerRing(server->ringmanager) == -1){
                 printf("Please join a ring before searching.\n");
                 fflush(stdout);
+                wrote = 1;
                 break;
             }
             
             if( RingManagerCheck(server->ringmanager, searchID) ){
                 printf("1 belongs to %d at %s %d\n", nodeID, server->ip, server->TCPport); 
+                wrote = 1;
             } else {
                 RingManagerQuery(server->ringmanager, nodeID, searchID);
                 RoutingTablePush(server->routingtable, searchID, UI);
@@ -617,6 +641,7 @@ int ServerProcUIReq(Server * server, Request * request){
         case(UI_HASH):
         {
             printf("hash: %i\n", hash(RequestGetArg(request, 1)));
+            wrote = 1;
             break;
         }
         case(UI_SEND):
@@ -642,6 +667,7 @@ int ServerProcUIReq(Server * server, Request * request){
             } else {
                 printf("No luck here.\n");
             }
+            wrote = 1;
             
             fflush(stdout);
             break;
@@ -654,12 +680,15 @@ int ServerProcUIReq(Server * server, Request * request){
                 
                 printf("Debug mode disabled.\n");
                 fflush(stdout);    
+                wrote = 1;
                 break;
             }
             server->debug = 1;
             
             printf("Debug mode enabled.\n");
             fflush(stdout);
+            
+            wrote = 1;
             break;
         }
         case(UI_HELP):
@@ -696,16 +725,19 @@ int ServerProcUIReq(Server * server, Request * request){
             puts("                      Sends manual response as if [askerID] asked for [searchID].");
             puts("send                  Sends next inputted text to predecessor.");
             puts("hash [cmd]            Generates hash code for [cmd].");
+            
+            wrote = 1;
             break;
         }
         default:
         {
             printf("Command not recognised.\n");
+            wrote = 1;
             break;
         }
     }
     
-    return 0;
+    return wrote;
 }
 
 void ServerSetIP(Server * server, char* ip){
