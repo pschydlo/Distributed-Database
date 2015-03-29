@@ -18,6 +18,7 @@ struct RingManager{
     int id;
     int TCPport;
     char ip[16];
+    int watchlist;
 };
 
 int RingManagerSuccID(RingManager * ringmanager){
@@ -113,7 +114,9 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         sprintf(msg, "CON %d %s %d\n", id, ip, port); 
 
         TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
-        close(ringmanager->predi->fd);
+        shutdown(ringmanager->predi->fd, SHUT_WR);
+        
+        ringmanager->watchlist = ringmanager->predi->fd;
     }
   
     ringmanager->predi->fd = fd;
@@ -163,8 +166,11 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
 
     if(ringmanager->succi == NULL){
         ringmanager->succi = malloc(sizeof(Peer));
-        memset(ringmanager->succi, 0, sizeof(Peer));
+    }else{
+        close(ringmanager->succi->fd);
     }
+    
+    memset(ringmanager->succi, 0, sizeof(Peer));
     
     ringmanager->succi->fd = fd;
     ringmanager->succi->id = succiID;
@@ -195,6 +201,12 @@ int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
         n++;
     }
     
+    if(ringmanager->watchlist > 0){
+        FD_SET(ringmanager->watchlist, rfds);
+        *maxfd = ( ringmanager->watchlist > *maxfd ? ringmanager->watchlist : *maxfd );
+        n++;
+    }
+    
     return n;
 }
 
@@ -221,7 +233,22 @@ RingManager * RingManagerCreate(){
 int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
     int n = 0;
     int reqlength = 0;
-
+    
+    /* -- Check Watch List FD for close --- */
+    if(ringmanager->watchlist > 0 && FD_ISSET(ringmanager->watchlist,rfds)){
+        FD_CLR(ringmanager->watchlist, rfds);
+        char buffer[10];
+        
+        printf("Can close now!\n");
+        fflush(stdout);
+        
+        n = read(ringmanager->watchlist, buffer, 10);
+        if(n <= 0){
+            close(ringmanager->watchlist);
+            ringmanager->watchlist = -1;
+        }
+    }
+    
     /* ------ Process buffers ------------ */
     if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
         memcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength, ringmanager->succi->bufferhead - reqlength);
@@ -247,7 +274,9 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
         
         if( n <= 0 ) {
-            close(ringmanager->predi->fd);
+            shutdown(ringmanager->predi->fd, SHUT_WR);
+            ringmanager->watchlist = ringmanager->predi->fd;
+            
             free(ringmanager->predi);
             ringmanager->predi = NULL;
 
@@ -313,7 +342,7 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
 
     shutdown(ringmanager->predi->fd, SHUT_WR);
-    close(ringmanager->predi->fd);
+    ringmanager->watchlist = ringmanager->predi->fd;
     
     shutdown(ringmanager->succi->fd, SHUT_WR);
     close(ringmanager->succi->fd);
