@@ -91,18 +91,30 @@ void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int re
 
 int RingManagerStatus(RingManager * ringmanager){
         
-    printf("Anel %i | Id %i ", ringmanager->ring, ringmanager->id);
+    printf("Ring ");
+    if(ringmanager->ring == -1) printf("-- ");
+    else printf("%i ", ringmanager->ring);
+    printf("| Id ");
+    if(ringmanager->id == -1) printf("-- ");
+    else printf("%i ", ringmanager->id);
     if(ringmanager->predi != NULL) printf("| Predecessor %i ", ringmanager->predi->id);
-    else printf("Nao existe predecessor ");
-    if(ringmanager->succi != NULL) printf("| Successor %i", ringmanager->succi->id);
-    else printf("Nao existe successor ");
-    printf("| Ext facing TCP: %d", ringmanager->TCPport);
+    else printf("| --- ");
+    if(ringmanager->succi != NULL) printf("| Successor %i ", ringmanager->succi->id);
+    else printf("| --- ");
+    printf("| TCP port: %d", ringmanager->TCPport);
     printf("\n");
         
     return 0;
 }
 
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port){
+
+    struct linger so_linger;
+
+    so_linger.l_onoff = 1;
+    so_linger.l_linger = 10;
+    setsockopt(fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
+
     if(ringmanager->predi == NULL){
         ringmanager->predi = (Peer*)malloc(sizeof(Peer));
         memset(ringmanager->predi, 0, sizeof(Peer));
@@ -135,7 +147,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
-    if(succiID == id){
+    if(succiID == id){ 
         /* Last node in ring */
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
@@ -167,6 +179,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
     if(ringmanager->succi == NULL){
         ringmanager->succi = malloc(sizeof(Peer));
     }else{
+        puts("Node left");
         close(ringmanager->succi->fd);
     }
     
@@ -201,11 +214,11 @@ int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
         n++;
     }
     
-    if(ringmanager->watchlist > 0){
+   /* if(ringmanager->watchlist > 0){
         FD_SET(ringmanager->watchlist, rfds);
         *maxfd = ( ringmanager->watchlist > *maxfd ? ringmanager->watchlist : *maxfd );
         n++;
-    }
+    }*/
     
     return n;
 }
@@ -235,7 +248,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
     int reqlength = 0;
     
     /* -- Check Watch List FD for close --- */
-    if(ringmanager->watchlist > 0 && FD_ISSET(ringmanager->watchlist,rfds)){
+   /* if(ringmanager->watchlist > 0 && FD_ISSET(ringmanager->watchlist,rfds)){
         FD_CLR(ringmanager->watchlist, rfds);
         char buffer[10];
         
@@ -247,7 +260,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
             close(ringmanager->watchlist);
             ringmanager->watchlist = -1;
         }
-    }
+    }*/
     
     /* ------ Process buffers ------------ */
     if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
@@ -272,6 +285,8 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         FD_CLR(ringmanager->predi->fd, rfds);
         
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
+        printf("%d bytes\nbuffer: %s\n", n, ringmanager->predi->buffer);
+        fflush(stdout);
         
         if( n <= 0 ) {
             shutdown(ringmanager->predi->fd, SHUT_WR);
@@ -340,12 +355,15 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
     TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
-
-    shutdown(ringmanager->predi->fd, SHUT_WR);
-    ringmanager->watchlist = ringmanager->predi->fd;
+    /*sleep(1);*/
+    /*shutdown(ringmanager->predi->fd, SHUT_WR);*/
+    /*ringmanager->watchlist = ringmanager->predi->fd;*/
+    close(ringmanager->predi->fd);
+    puts("Closing predi");
     
-    shutdown(ringmanager->succi->fd, SHUT_WR);
+    /*shutdown(ringmanager->succi->fd, SHUT_WR);*/
     close(ringmanager->succi->fd);
+    puts("Closing succi");
     
     free(ringmanager->predi);
     free(ringmanager->succi);
