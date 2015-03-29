@@ -439,7 +439,9 @@ int ServerProcTCPReq(Server * server, Request * request){
             char * originIP = RequestGetArg(request, 2);
             int originPort  = atoi(RequestGetArg(request, 3));
             
-            RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
+            if(RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort))
+                puts("Connected successfully.");
+            else puts("Connection unsuccessful.");
             TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
             
             break;
@@ -525,7 +527,9 @@ int ServerProcUIReq(Server * server, Request * request){
                 char * succiIP = RequestGetArg(request, 4); 
                 int succiPort  = atoi(RequestGetArg(request, 5)); 
 
-                RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+                if(RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort))
+                    puts("Connection successful.");
+                else puts("Connection unsuccessful.");
             }
             break;
         }
