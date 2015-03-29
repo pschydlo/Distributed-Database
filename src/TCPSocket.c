@@ -39,7 +39,15 @@ int TCPSocketBind(int fd, int port){
 }
 
 int TCPSocketCreate(){
-    return socket(AF_INET,SOCK_STREAM,0);
+    int fd = socket(AF_INET,SOCK_STREAM,0);
+    
+    struct linger so_linger;
+
+    so_linger.l_onoff = 1;
+    so_linger.l_linger = 10;
+    setsockopt(fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
+    
+    return fd;
 }
     
 int TCPSocketConnect(int fd, char * ip, int port){

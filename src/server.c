@@ -209,9 +209,10 @@ int ServerProcUDPReq(Server * server, Request * request){
                 server->isBoot = 1;
                 puts("Ring established successfully.");
             }else{
+                if(RingManagerAlone(server->ringmanager)) puts("Ring successfully deleted.");
+                else puts("Boot state transfered successfully.");
                 RingManagerLeave(server->ringmanager, server->isBoot);
                 server->isBoot = 0;
-                puts("Boot state transfered successfully.");
             }
             break;
         }
@@ -673,7 +674,6 @@ int ServerProcUIReq(Server * server, Request * request){
             puts("help                  Shows this help menu.");
             puts("leave                 Leaves current ring.");
             puts("exit                  Exit the program.");
-            puts("Debug commands:");
             puts("debug [on|off]        Activates or deactivates debug mode,");
             puts("                      which shows network messages.");
             if(!server->debug) break;
