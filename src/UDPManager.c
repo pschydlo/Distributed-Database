@@ -59,8 +59,6 @@ int UDPManagerReg(UDPManager * udpmanager, char * ip, int port){
 int UDPManagerRegSucc(UDPManager * udpmanager, int id, char * ip, int port){
     char buffer[128];
     sprintf(buffer, "REG %d %d %s %d", udpmanager->ring, id, ip, port);
-    printf("%s\n", buffer);
-    fflush(stdout);
     if(UDPManagerMsg(udpmanager, buffer) == -1) exit(1); /*Error handle better, please*/
     return 0;
 }

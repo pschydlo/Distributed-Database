@@ -78,18 +78,12 @@ void RingManagerQuery(RingManager * ringmanager, int askerID, int searchID ){
     char query[50];
     sprintf(query, "QRY %d %d\n", askerID, searchID);
   
-    printf("You are sending: %s", query);
-    fflush(stdout);
-  
     if(ringmanager->succi != NULL) TCPSocketWrite(ringmanager->succi->fd, query, strlen(query));
 }
 
 void RingManagerRsp(RingManager * ringmanager, int askerID, int searchID, int responsibleID, char * ip, int port){
     char query[50];
     sprintf(query, "RSP %d %d %d %s %d\n", askerID, searchID, responsibleID, ip, port);
-
-    printf("You are sending: %s", query);
-    fflush(stdout);
 
     if(ringmanager->predi != NULL) TCPSocketWrite(ringmanager->predi->fd, query, strlen(query));
 }
@@ -126,7 +120,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         ringmanager->predi->id = id;
         ringmanager->predi->port = port;
         
-        printf("Connected to predi succesfully.\nring is %d\n",ringmanager->ring);
+        printf("Connected to predi succesfully.\n");
         fflush(stdout);
         
         if(ringmanager->succi == NULL){
@@ -139,7 +133,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
     if(succiID == id){
-        puts("Yes, I am the last vertex, yes");
+        /* Last node in ring */
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
         
@@ -250,8 +244,6 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         FD_CLR(ringmanager->predi->fd, rfds);
         
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
-        printf("N: %d\n", n);
-        fflush(stdout);
         
         if( n <= 0 ) {
             close(ringmanager->predi->fd);
@@ -261,9 +253,9 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
             printf("Lost connection to predi.\n");
             fflush(stdout);
             
-           /* RequestReset(request);
-            RequestPushArg(request, "CONFAIL");
-            RequestPushArg(request, "predi"); */
+            RequestReset(request);
+            RequestPushArg(request, "CONFAIL", 7);
+            RequestPushArg(request, "predi", 5);
             return 1;
         }else{
             ringmanager->predi->bufferhead += n;
@@ -284,10 +276,9 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
             printf("Lost connection to succi.\n");
             fflush(stdout);
         
-            /*
             RequestReset(request);
-            RequestPushArg(request, "CONFAIL");
-            RequestPushArg(request, "succi"); */
+            RequestPushArg(request, "CONFAIL", 7);
+            RequestPushArg(request, "succi", 5); 
         }else{
             ringmanager->succi->bufferhead += n;
             ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
@@ -316,10 +307,7 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
         TCPSocketWrite(ringmanager->succi->fd, msg, strlen(msg));
     }
     
-    
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
-    printf("%s\n", msg);
-    fflush(stdout);
     TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
 
     shutdown(ringmanager->predi->fd, SHUT_WR);
@@ -339,7 +327,7 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
 };
 
 void RingManagerStop ( RingManager * ringmanager, int isBoot){
-    RingManagerLeave(ringmanager, isBoot);
+    if(RingManagerRing(ringmanager) != -1) RingManagerLeave(ringmanager, isBoot);
     
     if(ringmanager->predi != NULL) free(ringmanager->predi);
     if(ringmanager->succi != NULL) free(ringmanager->succi);

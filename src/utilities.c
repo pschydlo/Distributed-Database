@@ -75,9 +75,7 @@ int ProcArg(int argc, char ** argv, Config * config){
             default:
                 return 0;
         }
-  }
-  
-    printf("tvalue = %s, ivalue = %s, pvalue = %s\n", ringPort, bootIP, bootPort);
+    }
 
     for (i = optind; i < argc; i++)
         fprintf (stderr, "Argumento invalido %s\n", argv[i]);

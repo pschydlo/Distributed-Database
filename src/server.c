@@ -75,7 +75,7 @@ Server * ServerInit(){
     /* -- Default configs -- */
     server->isBoot      = 0;
     server->shutdown    = 0;
-    server->debug       = 1;
+    server->debug       = 0;
     
     server->udpmanager  = UDPManagerCreate();
     server->tcpmanager  = TCPManagerCreate();
@@ -105,7 +105,9 @@ int ServerStart(Server * server, char * ip, int port){
     HTTPManager * httpmanager = HTTPManagerCreate();
     HTTPManagerStart(httpmanager, 2000);*/
     
-    printf("Started server succesfully.\n");
+    printf("\nStarted server succesfully.\n");
+    printf("%s:%d\n\n", server->ip, server->TCPport);
+    fflush(stdout);
     
     /* Event Loop */
     while(!(server->shutdown)){
@@ -257,7 +259,6 @@ int ServerProcUDPReq(Server * server, Request * request){
             char * succiIP = RequestGetArg(request, 2);
             int succiPort  = atoi(RequestGetArg(request, 3));
             
-            printf("Got this far!\n");
             fflush(stdout);
 
             if(UDPManagerID(server->udpmanager) == succiID){
@@ -265,12 +266,12 @@ int ServerProcUDPReq(Server * server, Request * request){
                 break;
             }
             
+            printf("Attempting to join ring.\n");
+            
             RingManagerSetRing(server->ringmanager, ring, id);
             RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
             close(UDPManagerTCPfd(server->udpmanager));
             UDPManagerSetTCPfd(server->udpmanager, -1);
-            
-            printf("Joining ring.\n");
             
             break;
         }
@@ -359,9 +360,6 @@ int ServerProcRingReq(Server * server, Request * request){
             char * succiIP   = RequestGetArg(request, 2);
             int    succiPort = atoi(RequestGetArg(request, 3));
             
-            puts("received a CON");
-            if(succiID == id) puts("I am alone");
-
             RingManagerConnect(server->ringmanager, RingManagerRing(server->ringmanager), id, succiID, succiIP, succiPort);
             
             break;
@@ -445,8 +443,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                 TCPSocketWrite(RequestGetFD(request), msg, strlen(msg));
 
                 if(server->debug){
-                    printf("Trying to tell external to SUCC me off\n");
-                    printf("%sto fd %d\n", msg, RequestGetFD(request));
+                    printf("%s to fd %d\n", msg, RequestGetFD(request));
                     fflush(stdout);
                 }
             }
@@ -457,7 +454,7 @@ int ServerProcTCPReq(Server * server, Request * request){
                 TCPManagerRoutingPush(server->tcpmanager, searchID, RequestGetFD(request));
             
                 if(server->debug){
-                    printf("Will look for someone to SUCC external off\n");
+                    printf("This node will not be the SUCC\n");
                     fflush(stdout);
                 }
             }
@@ -503,9 +500,6 @@ int ServerProcUIReq(Server * server, Request * request){
                 }
                 
                 UDPManagerJoin(server->udpmanager, atoi(RequestGetArg(request, 1)), atoi(RequestGetArg(request, 2)));
-                
-                printf("Request for information sent.\n");
-                fflush(stdout);
                 
             }else if(argCount == 6){
             
@@ -561,17 +555,19 @@ int ServerProcUIReq(Server * server, Request * request){
             int nodeID    = RingManagerId(server->ringmanager);
 
             if(searchID < 0 || searchID > ID_UPPER_BOUND){
-                printf("Requested ID is out of allowed bounds.");
+                printf("Requested ID is out of allowed bounds.\n");
+                fflush(stdout);
                 break;
             }
             
             if(RingManagerRing(server->ringmanager) == -1){
                 printf("Node does not belong to any ring.\n");
+                fflush(stdout);
                 break;
             }
             
             if( RingManagerCheck(server->ringmanager, searchID) ){
-                printf("Yey, don't have to go far: %i, ip, port\n", nodeID); /*Add variables for ip and port eventually*/
+                printf("1 belongs to %d at %s %d\n", nodeID, server->ip, server->TCPport); 
             } else {
                 RingManagerQuery(server->ringmanager, nodeID, searchID); /*Add int->string support eventually*/
                 RoutingTablePush(server->routingtable, searchID, UI);
