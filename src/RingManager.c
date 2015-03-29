@@ -116,18 +116,18 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         close(ringmanager->predi->fd);
     }
   
-        ringmanager->predi->fd = fd;
-        ringmanager->predi->id = id;
-        ringmanager->predi->port = port;
-        
-        printf("Connected to predi succesfully.\n");
-        fflush(stdout);
-        
-        if(ringmanager->succi == NULL){
-            RingManagerConnect(ringmanager, ringmanager->ring, ringmanager->id, id, ip, port);
-        }
-  
-        return 1;
+    ringmanager->predi->fd = fd;
+    ringmanager->predi->id = id;
+    ringmanager->predi->port = port;
+
+    printf("Connected to predi succesfully.\n");
+    fflush(stdout);
+
+    if(ringmanager->succi == NULL){
+        RingManagerConnect(ringmanager, ringmanager->ring, ringmanager->id, id, ip, port);
+    }
+
+    return 1;
 }
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
@@ -278,7 +278,8 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         
             RequestReset(request);
             RequestPushArg(request, "CONFAIL", 7);
-            RequestPushArg(request, "succi", 5); 
+            RequestPushArg(request, "succi", 5);
+            return 1;
         }else{
             ringmanager->succi->bufferhead += n;
             ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
