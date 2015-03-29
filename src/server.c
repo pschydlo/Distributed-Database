@@ -122,6 +122,9 @@ int ServerStart(Server * server, char * ip, int port){
         UDPManagerArm(server->udpmanager, &rfds, &maxfd);
         /*HTTPManagerArm(httpmanager, &rfds, &maxfd);*/
         
+        printf("$:");
+        fflush(stdout);
+        
         counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
         
         if(counter < 0){
