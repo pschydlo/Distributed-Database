@@ -147,7 +147,8 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
-    if(succiID == id){ 
+    if(succiID == id){
+        puts("Node left");
         /* Last node in ring */
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
@@ -289,9 +290,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         fflush(stdout);
         
         if( n <= 0 ) {
-            shutdown(ringmanager->predi->fd, SHUT_WR);
-            ringmanager->watchlist = ringmanager->predi->fd;
-            
+            close(ringmanager->predi->fd);
             free(ringmanager->predi);
             ringmanager->predi = NULL;
 
@@ -384,3 +383,7 @@ void RingManagerStop ( RingManager * ringmanager, int isBoot){
     free(ringmanager);
 }
 
+void RingManagerAbrupt(RingManager * ringmanager){
+    if(ringmanager->predi != NULL) close(ringmanager->predi->fd);
+    if(ringmanager->succi != NULL) close(ringmanager->succi->fd);
+}
