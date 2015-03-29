@@ -132,7 +132,7 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
-    if(succiID == id){
+    if(succiID == id){ 
         /* Last node in ring */
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
@@ -245,6 +245,8 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         FD_CLR(ringmanager->predi->fd, rfds);
         
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
+        printf("%d bytes\nbuffer: %s\n", n, ringmanager->predi->buffer);
+        fflush(stdout);
         
         if( n <= 0 ) {
             close(ringmanager->predi->fd);
@@ -311,7 +313,7 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     
     sprintf(msg, "CON %d %s %d\n", ringmanager->succi->id, ringmanager->succi->ip, ringmanager->succi->port);
     TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
-
+    /*sleep(1);*/
     shutdown(ringmanager->predi->fd, SHUT_WR);
     close(ringmanager->predi->fd);
     
