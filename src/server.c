@@ -1,6 +1,6 @@
 #include "server.h"
 
-#define max(A,B) ((A)>=(B)?(A):(B)) /*I think we don't even use this, we just do it manually in the while loop*/
+#define max(A,B) ((A)>=(B)?(A):(B))
 
 #define ID_UPPER_BOUND 64
 
@@ -38,6 +38,7 @@
 #define RING_RSP    446
 #define RING_CON    476
 #define RING_BOOT   998
+#define RING_CONFAIL 7722
 
 /*TCP Manager comand hashes */
 
@@ -403,6 +404,10 @@ int ServerProcRingReq(Server * server, Request * request){
             server->isBoot = 1;
             break;
         }
+        case(RING_CONFAIL):
+        {
+            RingManagerAbrupt(server->ringmanager);
+        }
         default:
             //Handle unrecognized command
             break;
@@ -446,7 +451,9 @@ int ServerProcTCPReq(Server * server, Request * request){
             char * originIP = RequestGetArg(request, 2);
             int originPort  = atoi(RequestGetArg(request, 3));
             
-            RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort);
+            if(RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort))
+                puts("Connected successfully.");
+            else puts("Connection unsuccessful.");
             TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
             
             break;
@@ -539,7 +546,9 @@ int ServerProcUIReq(Server * server, Request * request){
                 char * succiIP = RequestGetArg(request, 4); 
                 int succiPort  = atoi(RequestGetArg(request, 5)); 
 
-                RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort);
+                if(RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort))
+                    puts("Connection successful.");
+                else puts("Connection unsuccessful.");
             }
             break;
         }

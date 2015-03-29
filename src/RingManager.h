@@ -43,3 +43,5 @@ int  RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request)
 
 int  RingManagerRes(RingManager * ringmanager, int fd, char * buffer, int nbytes);
 void RingManagerStop ( RingManager * ringmanager, int isBoot);
+
+void RingManagerAbrupt(RingManager * ringmanager);

@@ -108,7 +108,6 @@ int RingManagerStatus(RingManager * ringmanager){
 }
 
 int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int port){
-
     struct linger so_linger;
 
     so_linger.l_onoff = 1;
@@ -126,20 +125,15 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
         sprintf(msg, "CON %d %s %d\n", id, ip, port); 
 
         TCPSocketWrite(ringmanager->predi->fd, msg, strlen(msg));
-        shutdown(ringmanager->predi->fd, SHUT_WR);
-        
-        ringmanager->watchlist = ringmanager->predi->fd;
+        close(ringmanager->predi->fd);
     }
   
     ringmanager->predi->fd = fd;
     ringmanager->predi->id = id;
     ringmanager->predi->port = port;
-
-    printf("Connected to predi succesfully.\n");
-    fflush(stdout);
-
+    
     if(ringmanager->succi == NULL){
-        RingManagerConnect(ringmanager, ringmanager->ring, ringmanager->id, id, ip, port);
+        return RingManagerConnect(ringmanager, ringmanager->ring, ringmanager->id, id, ip, port);
     }
 
     return 1;
@@ -147,7 +141,8 @@ int RingManagerNew(RingManager * ringmanager, int fd, int id, char * ip, int por
 
 int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID, char * succiIP, int succiPort){
 
-    if(succiID == id){ 
+    if(succiID == id){
+        puts("Node left.");
         /* Last node in ring */
         close(ringmanager->predi->fd);
         close(ringmanager->succi->fd);
@@ -179,7 +174,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
     if(ringmanager->succi == NULL){
         ringmanager->succi = malloc(sizeof(Peer));
     }else{
-        puts("Node left");
+        puts("Topology change.");
         close(ringmanager->succi->fd);
     }
     
@@ -192,10 +187,7 @@ int RingManagerConnect(RingManager * ringmanager, int ring, int id, int succiID,
     strcpy(ringmanager->succi->ip, succiIP);
     ringmanager->succi->port = succiPort;
     
-    printf("Connected to succi succesfully.\n");
-    fflush(stdout);
-    
-    return n;
+    return 1;
 }
 
 int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
@@ -289,9 +281,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         fflush(stdout);
         
         if( n <= 0 ) {
-            shutdown(ringmanager->predi->fd, SHUT_WR);
-            ringmanager->watchlist = ringmanager->predi->fd;
-            
+            close(ringmanager->predi->fd);
             free(ringmanager->predi);
             ringmanager->predi = NULL;
 
@@ -384,3 +374,7 @@ void RingManagerStop ( RingManager * ringmanager, int isBoot){
     free(ringmanager);
 }
 
+void RingManagerAbrupt(RingManager * ringmanager){
+    if(ringmanager->predi != NULL) close(ringmanager->predi->fd);
+    if(ringmanager->succi != NULL) close(ringmanager->succi->fd);
+}
