@@ -39,6 +39,9 @@ int RequestGetArgCount(Request * request){
     return request->argc;
 }
 
+    /*A request serves the purpose of storing the information in any command,
+     * placing each argument in an array of strings.
+     * Then the arguments can be read individually.*/
 Request * RequestCreate(){
     Request * request = (Request*)malloc(sizeof(Request));
     memset(request, 0, sizeof(Request));

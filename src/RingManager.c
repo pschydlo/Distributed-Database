@@ -209,6 +209,7 @@ RingManager * RingManagerCreate(){
     RingManager * ringmanager = (RingManager*)malloc(sizeof(RingManager));
     memset(ringmanager, 0, sizeof(RingManager));
     
+    /*Ring manager initialisation*/
     ringmanager->succi = NULL;
     ringmanager->predi = NULL;
     ringmanager->id    = -1;

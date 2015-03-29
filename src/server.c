@@ -81,6 +81,8 @@ Server * ServerInit(){
     server->tcpmanager  = TCPManagerCreate();
     server->ringmanager = RingManagerCreate();
     server->routingtable= RoutingTableCreate(ID_UPPER_BOUND);
+    /*General routing table for indexing pending searches,
+     * distinguishes between sources: UI or external connection*/
     
     return server;
 }
@@ -98,14 +100,14 @@ int ServerStart(Server * server, char * ip, int port){
     RequestReset(request);
     
     /* Start interfaces */
-    TCPManagerStart(server->tcpmanager, &(server->TCPport));
+    TCPManagerStart(server->tcpmanager, &(server->TCPport));    /*Sets up listening port, pfd*/
     RingManagerStart(server->ringmanager, server->ip, server->TCPport);
-    UDPManagerStart(server->udpmanager);
+    UDPManagerStart(server->udpmanager);                        /*Sets up UDP socket*/
     /*
     HTTPManager * httpmanager = HTTPManagerCreate();
     HTTPManagerStart(httpmanager, 2000);*/
     
-    printf("\nStarted server succesfully.\n");
+    printf("###########################\nStarted server succesfully.\n");
     printf("%s:%d\n\n", server->ip, server->TCPport);
     fflush(stdout);
     
@@ -132,25 +134,25 @@ int ServerStart(Server * server, char * ip, int port){
         do{
             n = 0;
             RequestReset(request);
-            if(RingManagerReq(server->ringmanager, &rfds, request)){
+            if(RingManagerReq(server->ringmanager, &rfds, request) > 0){
                 ServerProcRingReq(server, request);
                 n++;
             }
 
             RequestReset(request);
-            if(TCPManagerReq(server->tcpmanager, &rfds, request)){
+            if(TCPManagerReq(server->tcpmanager, &rfds, request) > 0){
                 ServerProcTCPReq(server, request);
                 n++;
             }
 
             RequestReset(request);
-            if(UDPManagerReq(server->udpmanager, &rfds, request)){
+            if(UDPManagerReq(server->udpmanager, &rfds, request) > 0){
                 ServerProcUDPReq(server, request);
                 n++;
             }
             
             RequestReset(request);
-            if(UIManagerReq(&rfds, request)){
+            if(UIManagerReq(&rfds, request) > 0){
                 ServerProcUIReq(server, request);
                 n++;
             }
@@ -205,9 +207,11 @@ int ServerProcUDPReq(Server * server, Request * request){
             if(RingManagerRing(server->ringmanager) == -1){
                 RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
                 server->isBoot = 1;
+                puts("Ring established successfully.");
             }else{
                 RingManagerLeave(server->ringmanager, server->isBoot);
                 server->isBoot = 0;
+                puts("Boot state transfered successfully.");
             }
             break;
         }
@@ -573,7 +577,7 @@ int ServerProcUIReq(Server * server, Request * request){
             if( RingManagerCheck(server->ringmanager, searchID) ){
                 printf("1 belongs to %d at %s %d\n", nodeID, server->ip, server->TCPport); 
             } else {
-                RingManagerQuery(server->ringmanager, nodeID, searchID); /*Add int->string support eventually*/
+                RingManagerQuery(server->ringmanager, nodeID, searchID);
                 RoutingTablePush(server->routingtable, searchID, UI);
             }
             
