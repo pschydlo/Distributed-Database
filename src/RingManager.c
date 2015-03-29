@@ -298,7 +298,7 @@ void RingManagerLeave(RingManager * ringmanager, int isBoot){
     
     if(ringmanager->predi == NULL && ringmanager->succi == NULL) return;
     if(ringmanager->predi == NULL || ringmanager->succi == NULL){
-        printf("Something's fucky :( \n");/*Something broke in this case*/
+        printf("Ring is broken.\n");/*Something broke in this case*/
         exit(1);
     }
     
