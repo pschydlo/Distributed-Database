@@ -111,6 +111,9 @@ int ServerStart(Server * server, char * ip, int port){
     printf("%s:%d\n\n", server->ip, server->TCPport);
     fflush(stdout);
     
+    printf("$:");
+    fflush(stdout);
+    
     /* Event Loop */
     while(!(server->shutdown)){
         
@@ -121,9 +124,6 @@ int ServerStart(Server * server, char * ip, int port){
         TCPManagerArm(server->tcpmanager, &rfds, &maxfd);
         UDPManagerArm(server->udpmanager, &rfds, &maxfd);
         /*HTTPManagerArm(httpmanager, &rfds, &maxfd);*/
-        
-        printf("$:");
-        fflush(stdout);
         
         counter = select(maxfd+1,&rfds,(fd_set*)NULL,(fd_set*)NULL,(struct timeval*)NULL);
         
@@ -158,6 +158,9 @@ int ServerStart(Server * server, char * ip, int port){
             if(UIManagerReq(&rfds, request) > 0){
                 ServerProcUIReq(server, request);
                 n++;
+                
+                printf("$:");
+                fflush(stdout);
             }
             
           /*  RequestReset(request);
