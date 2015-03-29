@@ -13,8 +13,11 @@ TCPManager * TCPManagerCreate(){
     TCPManager * tcpmanager = (TCPManager*)malloc(sizeof(TCPManager));
     memset(tcpmanager, 0, sizeof(TCPManager));
     
+    /*Creates tcp routing table, which is responsible for delivering 
+     * a received RSP to the external connection which asked for it through ID*/
     tcpmanager->localRouting = RoutingTableCreate(64);
     
+    /*Initialises sockets which will receive external connections asking for ID i*/
     for(i=0; i < MAX_CON; i++){
         tcpmanager->sockets[i] = -1;
     }
@@ -23,7 +26,7 @@ TCPManager * TCPManagerCreate(){
 }
 
 int TCPManagerStart(TCPManager * tcpmanager, int * TCPport){
-    int pfd;
+    int pfd;    /*pfd is the listening socket, which will route incoming connections to tcpmanager->sockets[i]*/
     char opt;
     
     while((pfd = TCPSocketCreate()) == -1){

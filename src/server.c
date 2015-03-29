@@ -81,6 +81,8 @@ Server * ServerInit(){
     server->tcpmanager  = TCPManagerCreate();
     server->ringmanager = RingManagerCreate();
     server->routingtable= RoutingTableCreate(ID_UPPER_BOUND);
+    /*General routing table for indexing pending searches,
+     * distinguishes between sources: UI or external connection*/
     
     return server;
 }
@@ -98,14 +100,14 @@ int ServerStart(Server * server, char * ip, int port){
     RequestReset(request);
     
     /* Start interfaces */
-    TCPManagerStart(server->tcpmanager, &(server->TCPport));
+    TCPManagerStart(server->tcpmanager, &(server->TCPport));    /*Sets up listening port, pfd*/
     RingManagerStart(server->ringmanager, server->ip, server->TCPport);
-    UDPManagerStart(server->udpmanager);
+    UDPManagerStart(server->udpmanager);                        /*Sets up UDP socket*/
     /*
     HTTPManager * httpmanager = HTTPManagerCreate();
     HTTPManagerStart(httpmanager, 2000);*/
     
-    printf("\nStarted server succesfully.\n");
+    printf("###########################\nStarted server succesfully.\n");
     printf("%s:%d\n\n", server->ip, server->TCPport);
     fflush(stdout);
     
@@ -132,25 +134,25 @@ int ServerStart(Server * server, char * ip, int port){
         do{
             n = 0;
             RequestReset(request);
-            if(RingManagerReq(server->ringmanager, &rfds, request)){
+            if(RingManagerReq(server->ringmanager, &rfds, request) > 0){
                 ServerProcRingReq(server, request);
                 n++;
             }
 
             RequestReset(request);
-            if(TCPManagerReq(server->tcpmanager, &rfds, request)){
+            if(TCPManagerReq(server->tcpmanager, &rfds, request) > 0){
                 ServerProcTCPReq(server, request);
                 n++;
             }
 
             RequestReset(request);
-            if(UDPManagerReq(server->udpmanager, &rfds, request)){
+            if(UDPManagerReq(server->udpmanager, &rfds, request) > 0){
                 ServerProcUDPReq(server, request);
                 n++;
             }
             
             RequestReset(request);
-            if(UIManagerReq(&rfds, request)){
+            if(UIManagerReq(&rfds, request) > 0){
                 ServerProcUIReq(server, request);
                 n++;
             }
@@ -205,9 +207,11 @@ int ServerProcUDPReq(Server * server, Request * request){
             if(RingManagerRing(server->ringmanager) == -1){
                 RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
                 server->isBoot = 1;
+                puts("Ring established successfully.");
             }else{
                 RingManagerLeave(server->ringmanager, server->isBoot);
                 server->isBoot = 0;
+                puts("Boot state transfered successfully.");
             }
             break;
         }
@@ -515,7 +519,7 @@ int ServerProcUIReq(Server * server, Request * request){
         }
         case(UI_LEAVE):
         {
-            if(server->isBoot){ /*Put this in a function and place also after serverstart while loop*/
+            if(server->isBoot){
                 if(RingManagerAlone(server->ringmanager)) UDPManagerRem(server->udpmanager);
                 else UDPManagerRegSucc(server->udpmanager, 
                                         RingManagerSuccID(server->ringmanager), 
@@ -536,20 +540,24 @@ int ServerProcUIReq(Server * server, Request * request){
             RingManagerStatus(server->ringmanager);
             printf("UDP Manager:\n");
             UDPManagerStatus(server->udpmanager);
-            printf("Boot Status:\n");
+            printf("Boot State:\n");
             printf("isBoot = %d\n", server->isBoot);
             fflush(stdout);
             break;    
         }
         case(UI_RSP):
         {
-            RingManagerRsp(server->ringmanager, 0, 1, RingManagerId(server->ringmanager), server->ip, server->TCPport);
+            if(RequestGetArgCount(request) != 3) break;
+            int askerID  = atoi(RequestGetArg(request, 1));
+            int searchID  = atoi(RequestGetArg(request, 2));
+            RingManagerRsp(server->ringmanager, askerID, searchID, 
+                            RingManagerId(server->ringmanager), 
+                            server->ip, server->TCPport);
             break;  
         }
         case(UI_SEARCH):
         {
-            /*Reminder: limit commands if user is not connect to ring*/
-            if(RequestGetArgCount(request) < 2) return 0;
+            if(RequestGetArgCount(request) < 2) break;
 
             int searchID  = atoi(RequestGetArg(request, 1));
             int nodeID    = RingManagerId(server->ringmanager);
@@ -561,7 +569,7 @@ int ServerProcUIReq(Server * server, Request * request){
             }
             
             if(RingManagerRing(server->ringmanager) == -1){
-                printf("Node does not belong to any ring.\n");
+                printf("Please join a ring before searching.\n");
                 fflush(stdout);
                 break;
             }
@@ -569,7 +577,7 @@ int ServerProcUIReq(Server * server, Request * request){
             if( RingManagerCheck(server->ringmanager, searchID) ){
                 printf("1 belongs to %d at %s %d\n", nodeID, server->ip, server->TCPport); 
             } else {
-                RingManagerQuery(server->ringmanager, nodeID, searchID); /*Add int->string support eventually*/
+                RingManagerQuery(server->ringmanager, nodeID, searchID);
                 RoutingTablePush(server->routingtable, searchID, UI);
             }
             
@@ -623,9 +631,9 @@ int ServerProcUIReq(Server * server, Request * request){
             int id = atoi(RequestGetArg(request, 1));
             
             if(RingManagerCheck(server->ringmanager, id)){
-                printf("It's ours");
+                printf("It's ours.\n");
             } else {
-                printf("No luck here");
+                printf("No luck here.\n");
             }
             
             fflush(stdout);
@@ -649,12 +657,44 @@ int ServerProcUIReq(Server * server, Request * request){
         }
         case(UI_HELP):
         {
-            printf("There's no help for you young lad. \n");
+            puts("#     Distributed Database Project     #");
+            puts("#   Computer Networking and Internet   #");
+            puts("#   Instituto Superior Tecnico 2015    #");
+            puts("#      Christopher Edgley  75258       #");
+            puts("#      Paul Schydlo        76148       #");
+            puts("");
+            puts("Available commands are:");
+            puts("join [ring] [id]      Joins a ring through normal procedure.");
+            puts("join [ring] [id] [sucID] [sucIP] [sucPort]");
+            puts("                      Joins to a node directly.");
+            puts("show                  Shows ring, ID, successor's ID");
+            puts("                      and predecessor's ID.");
+            puts("search [id]           Searches for [id] in current ring.");
+            puts("help                  Shows this help menu.");
+            puts("leave                 Leaves current ring.");
+            puts("exit                  Exit the program.");
+            puts("Debug commands:");
+            puts("debug [on|off]        Activates or deactivates debug mode,");
+            puts("                      which shows network messages.");
+            if(!server->debug) break;
+            puts("");
+            puts("Debug commands:");
+            puts("status                Shows ring, ID, sucID, predID.");
+            puts("                      in tcpmanager and udpmanager, boot state.");
+            puts("check [id]            Checks if [id] belongs to current node.");
+            puts("stream                Sends next inputted text to predi without cr termination.");
+            puts("closestream           Sends only cr termination.");
+            puts("boopp                 Sends two pipelined messages to predecessor.");
+            puts("boops                 Sends two pipelined messages to successor.");
+            puts("rsp [askerID] [searchID]");
+            puts("                      Sends manual response as if [askerID] asked for [searchID].");
+            puts("send                  Sends next inputted text to predecessor.");
+            puts("hash [cmd]            Generates hash code for [cmd].");
             break;
         }
         default:
         {
-            printf("Comando não reconhecido\n");
+            printf("Command not recognised.\n");
             break;
         }
     }

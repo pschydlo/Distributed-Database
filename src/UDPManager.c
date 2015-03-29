@@ -87,6 +87,8 @@ int UDPManagerStart(UDPManager * udpmanager){
         scanf("%c", &opt);
         if(opt != 'Y' && opt != 'y') exit(1);
     }
+    udpmanager->id = -1;
+    udpmanager->ring = -1;
     return 0;
 }
 
@@ -94,6 +96,7 @@ UDPManager * UDPManagerCreate(){
     UDPManager * udpmanager = (UDPManager*)malloc(sizeof(UDPManager));
     memset(udpmanager, 0, sizeof(UDPManager));
     
+    /*Sets the default ip for tejo.ist.utl.pt and default access port*/
     strcpy(udpmanager->ip, "193.136.138.142");
     udpmanager->port  = 58000;
     udpmanager->tcpfd = -1;
