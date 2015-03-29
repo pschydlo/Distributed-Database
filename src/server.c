@@ -81,9 +81,10 @@ Server * ServerInit(){
     server->udpmanager  = UDPManagerCreate();
     server->tcpmanager  = TCPManagerCreate();
     server->ringmanager = RingManagerCreate();
-    server->routingtable= RoutingTableCreate(ID_UPPER_BOUND);
+    
     /*General routing table for indexing pending searches,
      * distinguishes between sources: UI or external connection*/
+    server->routingtable= RoutingTableCreate(ID_UPPER_BOUND);
     
     return server;
 }
@@ -105,8 +106,8 @@ int ServerStart(Server * server, char * ip, int port){
     TCPManagerStart(server->tcpmanager, &(server->TCPport));    /*Sets up listening port, pfd*/
     RingManagerStart(server->ringmanager, server->ip, server->TCPport);
     UDPManagerStart(server->udpmanager);                        /*Sets up UDP socket*/
-    /*
-    HTTPManager * httpmanager = HTTPManagerCreate();
+    
+    /* HTTPManager * httpmanager = HTTPManagerCreate();
     HTTPManagerStart(httpmanager, 2000);*/
     
     printf("###########################\nStarted server succesfully.\n");
@@ -129,6 +130,7 @@ int ServerStart(Server * server, char * ip, int port){
         if(wrote == 1){
             printf("$:");
             fflush(stdout);
+            
             wrote = 0;
         }
         
@@ -196,6 +198,7 @@ int ServerProcUDPReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
+    int wrote = 0;
     
     if(server->debug){
         printf("UDP wrote: ");
@@ -218,9 +221,13 @@ int ServerProcUDPReq(Server * server, Request * request){
                 RingManagerSetRing(server->ringmanager, UDPManagerRing(server->udpmanager), UDPManagerID(server->udpmanager));
                 server->isBoot = 1;
                 puts("Ring established successfully.");
+                wrote = 1;
             }else{
                 if(RingManagerAlone(server->ringmanager)) puts("Ring successfully deleted.");
                 else puts("Boot state transfered successfully.");
+                
+                wrote = 1;
+                
                 RingManagerLeave(server->ringmanager, server->isBoot);
                 server->isBoot = 0;
             }
@@ -229,6 +236,7 @@ int ServerProcUDPReq(Server * server, Request * request){
         case(UDP_NOK):
         {
             printf("Problem with UDP. Received NOK.\n");
+            wrote = 1;
             break;
         }
         case(UDP_EMPTY):
@@ -262,6 +270,7 @@ int ServerProcUDPReq(Server * server, Request * request){
                 UDPManagerSetTCPfd(server->udpmanager, tcpfd);
             } else {
                 printf("ID %d occupied, please choose another\n", destID);
+                wrote = 1;
             }
             
             break;
@@ -278,6 +287,7 @@ int ServerProcUDPReq(Server * server, Request * request){
 
             if(UDPManagerID(server->udpmanager) == succiID){
                 printf("ID %d already in use in ring, please select another\n", succiID);
+                wrote = 1;
                 break;
             }
             
@@ -295,7 +305,7 @@ int ServerProcUDPReq(Server * server, Request * request){
             break;
     }
     
-    return 0;
+    return wrote;
 }
 
 /* Process Ring Manager Requests */
@@ -304,6 +314,7 @@ int ServerProcRingReq(Server * server, Request * request){
     int argCount = RequestGetArgCount(request);
     if(argCount <= 0) return 0;
 
+    int wrote = 0;
     
     if(server->debug){
         printf("Ring wrote: ");
@@ -314,10 +325,8 @@ int ServerProcRingReq(Server * server, Request * request){
         } 
         printf("\n");
         
-        printf("$:");
-        fflush(stdout);
+        wrote = 1;
     }
-    
     
     char * command = RequestGetArg(request,0);
     int code = hash(command);
@@ -355,8 +364,8 @@ int ServerProcRingReq(Server * server, Request * request){
                         printf("%d belongs to %d at %s %d\n", searchID, responsibleID, responsibleIP, responsiblePort);
                         fflush(stdout);
                         
-                        printf("$:");
-                        fflush(stdout);
+                        wrote = 1;
+                        
                         break;
                     }
                     case(TCP):
@@ -413,7 +422,7 @@ int ServerProcRingReq(Server * server, Request * request){
             break;
     }
     
-    return 0;
+    return wrote;
 }
 
 /* Process TCP Manager Requests */
@@ -451,9 +460,11 @@ int ServerProcTCPReq(Server * server, Request * request){
             char * originIP = RequestGetArg(request, 2);
             int originPort  = atoi(RequestGetArg(request, 3));
             
-            if(RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort))
-                puts("Connected successfully.");
+            if(RingManagerNew(server->ringmanager, RequestGetFD(request), originID, originIP, originPort)) puts("Connected successfully.");
             else puts("Connection unsuccessful.");
+            
+            wrote = 1;
+            
             TCPManagerRemoveSocket(server->tcpmanager, RequestGetFD(request));
             
             break;
@@ -549,6 +560,7 @@ int ServerProcUIReq(Server * server, Request * request){
                 if(RingManagerConnect(server->ringmanager, ring, id, succiID, succiIP, succiPort))
                     puts("Connection successful.");
                 else puts("Connection unsuccessful.");
+                wrote = 1;
             }
             break;
         }
@@ -638,6 +650,7 @@ int ServerProcUIReq(Server * server, Request * request){
             char buffer[100];
             fgets(buffer, 100, stdin);
             buffer[strlen(buffer)-1] = '\0';
+            wrote = 1;
             
             RingManagerMsg(server->ringmanager, 1, buffer);
             break;
@@ -657,14 +670,17 @@ int ServerProcUIReq(Server * server, Request * request){
         {
             char buffer[100];
             fgets(buffer, 100, stdin);
+            wrote = 1;
             
             RingManagerMsg(server->ringmanager, 1, buffer);
             break;
         }
         case(UI_EXIT):
         {
-            if(RingManagerRing(server->ringmanager) != -1) printf("Please leave ring before exiting.\n");
-            else server->shutdown = 1;
+            if(RingManagerRing(server->ringmanager) != -1){
+                printf("Please leave ring before exiting.\n");
+                wrote = 1;
+            } else server->shutdown = 1;
             break;
         }
         case(UI_CHECK):

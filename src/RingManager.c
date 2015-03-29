@@ -206,12 +206,6 @@ int RingManagerArm( RingManager * ringmanager, fd_set * rfds, int * maxfd ){
         n++;
     }
     
-   /* if(ringmanager->watchlist > 0){
-        FD_SET(ringmanager->watchlist, rfds);
-        *maxfd = ( ringmanager->watchlist > *maxfd ? ringmanager->watchlist : *maxfd );
-        n++;
-    }*/
-    
     return n;
 }
 
@@ -239,21 +233,6 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
     int n = 0;
     int reqlength = 0;
     
-    /* -- Check Watch List FD for close --- */
-   /* if(ringmanager->watchlist > 0 && FD_ISSET(ringmanager->watchlist,rfds)){
-        FD_CLR(ringmanager->watchlist, rfds);
-        char buffer[10];
-        
-        printf("Can close now!\n");
-        fflush(stdout);
-        
-        n = read(ringmanager->watchlist, buffer, 10);
-        if(n <= 0){
-            close(ringmanager->watchlist);
-            ringmanager->watchlist = -1;
-        }
-    }*/
-    
     /* ------ Process buffers ------------ */
     if(ringmanager->succi != NULL && (reqlength = RequestParseString(request, ringmanager->succi->buffer)) != 0 ){
         memcpy(ringmanager->succi->buffer, ringmanager->succi->buffer + reqlength, ringmanager->succi->bufferhead - reqlength);
@@ -261,8 +240,7 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         ringmanager->succi->bufferhead = ringmanager->succi->bufferhead - reqlength;
         ringmanager->succi->buffer[ringmanager->succi->bufferhead] = '\0';
         return 1;
-    }/*else RequestReset(request);*/
-    
+    } else RequestReset(request);
     
     if(ringmanager->predi != NULL && (reqlength = RequestParseString(request, ringmanager->predi->buffer)) != 0 ){
         memcpy(ringmanager->predi->buffer, ringmanager->predi->buffer + reqlength, ringmanager->predi->bufferhead - reqlength);
@@ -270,15 +248,13 @@ int RingManagerReq(RingManager * ringmanager, fd_set * rfds, Request * request){
         ringmanager->predi->bufferhead = ringmanager->predi->bufferhead - reqlength;
         ringmanager->predi->buffer[ringmanager->predi->bufferhead] = '\0';
         return 1;
-    } //else RequestReset(request);
+    } else RequestReset(request);
     
     /* ----- Fill buffers ----------------*/
     if(ringmanager->predi!=NULL && FD_ISSET(ringmanager->predi->fd,rfds)){
         FD_CLR(ringmanager->predi->fd, rfds);
         
         n = read(ringmanager->predi->fd, ringmanager->predi->buffer + ringmanager->predi->bufferhead, 128);
-        printf("%d bytes\nbuffer: %s\n", n, ringmanager->predi->buffer);
-        fflush(stdout);
         
         if( n <= 0 ) {
             close(ringmanager->predi->fd);
